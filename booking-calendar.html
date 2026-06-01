@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Trainingszeiten Buchung - Sportplatz Manager</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-sync.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .calendar-section,
+        .bookings-section {
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: white;
+            color: #000000;
+            border: none;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .back-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.6fr);
+            gap: 2rem;
+            padding: 2rem;
+        }
+
+        /* Kalender Styling */
+        .calendar-section h2 {
+            color: #000000;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-nav button {
+            background: #000000;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .calendar-nav button:hover {
+            background: #333333;
+            transform: translateY(-2px);
+        }
+
+        .month-year {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .weekday {
+            background: #f0f0f0;
+            padding: 1rem 0.2rem;
+            text-align: center;
+            font-weight: bold;
+            color: #000000;
+            border-radius: 5px;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .days {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 0.5rem;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #f9f9f9;
+            font-weight: bold;
+            transition: all 0.3s;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .day:hover {
+            border-color: #000000;
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .day.other-month {
+            color: #ccc;
+            pointer-events: none;
+        }
+
+        .day.today {
+            background: #000000;
+            color: white;
+            border-color: #000000;
+        }
+
+        .day.past {
+            background: #fdecea;
+            border-color: #e57373;
+            color: #c62828;
+            pointer-events: none;
+        }
+
+        .day.booked {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .day.selected {
+            background: #000000;
+            color: white;
+            border-color: #000000;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Dialog */
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dialog-overlay.active {
+            display: flex;
+        }
+
+        .dialog {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .dialog h3 {
+            color: #000000;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .dialog-content {
+            margin-bottom: 1.5rem;
+        }
+
+        .time-slot {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .time-slot label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .time-slot label span {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .time-slot input {
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .time-slot input:focus {
+            outline: none;
+            border-color: #000000;
+        }
+
+        .field-select {
+            margin-bottom: 1.5rem;
+        }
+
+        .field-select label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .field-select select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .field-select select:focus {
+            outline: none;
+            border-color: #000000;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .dialog-buttons button {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm {
+            background: #000000;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #333333;
+        }
+
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        /* Buchungen Liste */
+        .bookings-section {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bookings-section h2 {
+            color: #000000;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        #bookingsList {
+            padding-right: 0;
+        }
+
+        .booking-item {
+            background: white;
+            padding: 1rem;
+            border-left: 4px solid #000000;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .booking-info h4 {
+            color: #000000;
+            margin-bottom: 0.25rem;
+        }
+
+        .booking-info p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0.25rem 0;
+        }
+
+        .booking-delete {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .booking-delete:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+
+        .booking-fixed-badge {
+            background: #f0f0f0;
+            color: #000000;
+            border: 1px solid #cccccc;
+            padding: 0.45rem 0.75rem;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 2rem;
+            font-style: italic;
+        }
+
+        .booking-day-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .booking-day-title {
+            color: #444;
+            font-size: 1rem;
+            margin: 0 0 0.75rem 0;
+            padding-bottom: 0.35rem;
+            border-bottom: 1px solid #e3e3e3;
+        }
+
+        .field-views-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .availability-section {
+            margin: 0 2rem 2rem 2rem;
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .availability-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .availability-header h2 {
+            color: #000;
+            font-size: 1.4rem;
+            margin: 0;
+        }
+
+        .availability-date-picker {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .availability-date-picker label {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .availability-date-picker input {
+            padding: 0.45rem 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .availability-date-picker input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .availability-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            min-width: 0;
+        }
+
+        .availability-row {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            gap: 0.6rem;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .availability-label {
+            font-weight: bold;
+            color: #000;
+            font-size: 0.95rem;
+        }
+
+        .availability-track {
+            position: relative;
+            height: 40px;
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 5px;
+            overflow: hidden;
+            min-width: 0;
+        }
+
+        .availability-hours {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            pointer-events: none;
+        }
+
+        .availability-hour-marker {
+            flex: 1;
+            border-right: 1px dashed rgba(0,0,0,0.12);
+            font-size: 0.65rem;
+            color: #888;
+            padding: 2px 0 0 3px;
+        }
+
+        .availability-hour-marker:last-child {
+            border-right: none;
+        }
+
+        .availability-booking {
+            position: absolute;
+            top: 4px;
+            bottom: 4px;
+            background: #000;
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+        }
+
+        .availability-booking.fixed-series {
+            background: #555;
+            border: 1px dashed #fff;
+        }
+
+        .availability-legend {
+            display: flex;
+            gap: 1.2rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #555;
+            flex-wrap: wrap;
+        }
+
+        .availability-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-box {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+
+        .legend-box.free {
+            background: #e8f5e9;
+            border: 1px solid #c8e6c9;
+        }
+
+        .legend-box.booked {
+            background: #000;
+        }
+
+        .legend-box.fixed-series {
+            background: #555;
+            border: 1px dashed #fff;
+            outline: 1px solid #aaa;
+        }
+
+        .availability-empty {
+            color: #888;
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .field-view-column {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.75rem;
+            max-height: 620px;
+            overflow-y: auto;
+        }
+
+        .field-view-column .booking-day-title {
+            margin-bottom: 0.6rem;
+        }
+
+        .booking-subday-title {
+            color: #555;
+            font-size: 0.9rem;
+            margin: 0.75rem 0 0.45rem 0;
+            padding-bottom: 0.25rem;
+            border-bottom: 1px dashed #e3e3e3;
+            scroll-margin-top: 0.5rem;
+            transition: background 0.3s;
+        }
+
+        .booking-subday-title.highlight {
+            background: #fff7c2;
+            color: #000;
+            border-bottom-color: #f0c419;
+            padding: 0.25rem 0.4rem;
+            border-radius: 4px;
+        }
+
+        .field-view-column .booking-item {
+            margin-bottom: 0.6rem;
+        }
+
+        .field-view-column .booking-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .login-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0.7rem 2rem;
+            flex-wrap: wrap;
+        }
+
+        .login-bar .login-info {
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .login-bar .login-info strong {
+            color: #000;
+        }
+
+        .login-bar form {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .login-bar input {
+            padding: 0.45rem 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            width: 110px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .login-bar input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .login-bar button {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 0.45rem 0.9rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .login-bar button:hover {
+            background: #333;
+        }
+
+        .login-bar .logout-btn {
+            background: #c62828;
+        }
+
+        .login-bar .logout-btn:hover {
+            background: #a01a1a;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+                max-width: 100%;
+            }
+
+            .header {
+                padding: 1rem 0.75rem;
+            }
+
+            .header h1 {
+                font-size: 1.3rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .header p {
+                font-size: 0.85rem;
+            }
+
+            .back-btn {
+                top: 0.6rem;
+                right: 0.6rem;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            .login-bar {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.85rem;
+            }
+
+            .login-bar .login-info {
+                font-size: 0.8rem;
+                line-height: 1.3;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+                padding: 0.5rem;
+                width: 100%;
+            }
+
+            .calendar-section,
+            .bookings-section {
+                width: 100%;
+                min-width: 0;
+                overflow: hidden;
+            }
+
+            .calendar-section h2,
+            .bookings-section h2 {
+                font-size: 1.2rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .days,
+            .weekdays {
+                width: 100%;
+            }
+
+            .day {
+                aspect-ratio: auto;
+                min-height: 36px;
+                padding: 0.3rem 0;
+            }
+
+            .calendar-nav {
+                gap: 0.4rem;
+            }
+
+            .calendar-nav button {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+            }
+
+            .month-year {
+                font-size: 1rem;
+                text-align: center;
+                flex: 1;
+            }
+
+            .weekdays {
+                gap: 0.25rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .weekday {
+                padding: 0.4rem 0.2rem;
+                font-size: 0.75rem;
+            }
+
+            .days {
+                gap: 0.25rem;
+            }
+
+            .day {
+                font-size: 0.8rem;
+                border-width: 1px;
+                border-radius: 4px;
+            }
+
+            .bookings-section {
+                padding: 0.75rem;
+            }
+
+            .field-views-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .field-view-column {
+                padding: 0.6rem;
+                max-height: none;
+            }
+
+            .availability-section {
+                margin: 0 0.75rem 0.75rem 0.75rem;
+                padding: 0.75rem;
+            }
+
+            .availability-header h2 {
+                font-size: 1.1rem;
+            }
+
+            .availability-date-picker input {
+                font-size: 0.85rem;
+                padding: 0.35rem 0.5rem;
+            }
+
+            .availability-row {
+                grid-template-columns: 70px 1fr;
+                gap: 0.4rem;
+            }
+
+            .availability-label {
+                font-size: 0.8rem;
+            }
+
+            .availability-hour-marker {
+                font-size: 0.55rem;
+            }
+
+            .availability-booking {
+                font-size: 0.65rem;
+                padding: 0.15rem 0.25rem;
+            }
+
+            .availability-legend {
+                font-size: 0.75rem;
+                gap: 0.6rem;
+            }
+
+            .dialog {
+                padding: 1.25rem;
+                max-width: 95vw;
+            }
+
+            .dialog h3 {
+                font-size: 1.15rem;
+            }
+
+            .booking-item {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.7rem;
+            }
+
+            .booking-info h4 {
+                font-size: 0.95rem;
+            }
+
+            .booking-info p {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+
+            .day {
+                font-size: 0.7rem;
+            }
+
+            .weekday {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.1rem;
+            }
+
+            .availability-row {
+                grid-template-columns: 55px 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">← Zurück</a>
+            <h1>⚽ Trainingszeiten Buchung</h1>
+            <p>Buche deine Trainingszeiten für die verfügbaren Sportplätze</p>
+        </div>
+
+        <div class="login-bar" id="loginBar">
+            <div class="login-info" id="loginInfo">Nicht angemeldet – Bitte mit Trainer-Code anmelden, um zu buchen.</div>
+            <form id="loginForm" autocomplete="off">
+                <input type="password" id="loginCodeInput" placeholder="Code" maxlength="6">
+                <button type="submit">Anmelden</button>
+            </form>
+        </div>
+
+        <div class="content">
+            <!-- Kalender Section -->
+            <div class="calendar-section">
+                <h2>📅 Kalender</h2>
+                
+                
+                <div class="calendar-nav">
+                    <button id="prevBtn">← Zurück</button>
+                    <span class="month-year" id="monthYear"></span>
+                    <button id="nextBtn">Weiter →</button>
+                </div>
+
+                <div class="weekdays">
+                    <div class="weekday">Mo</div>
+                    <div class="weekday">Di</div>
+                    <div class="weekday">Mi</div>
+                    <div class="weekday">Do</div>
+                    <div class="weekday">Fr</div>
+                    <div class="weekday">Sa</div>
+                    <div class="weekday">So</div>
+                </div>
+
+                <div class="days" id="calendarDays"></div>
+            </div>
+
+            <!-- Buchungen Section -->
+            <div class="bookings-section">
+                <h2>📋 Alle gebuchten Zeiten pro Platz</h2>
+                <div id="bookingsList">
+                    <div class="empty-message">Keine gebuchten Zeiten vorhanden</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Belegungsübersicht -->
+        <div class="availability-section">
+            <div class="availability-header">
+                <h2>🕐 Belegungsübersicht</h2>
+                <div class="availability-date-picker">
+                    <label for="availabilityDate">Tag:</label>
+                    <input type="date" id="availabilityDate">
+                </div>
+            </div>
+            <div class="availability-grid" id="availabilityGrid"></div>
+            <div class="availability-legend">
+                <span><span class="legend-box free"></span>Frei</span>
+                <span><span class="legend-box booked"></span>Belegt (manuelle Buchung)</span>
+                <span><span class="legend-box fixed-series"></span>Festes Training (Serie)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialog Overlay -->
+    <div class="dialog-overlay" id="dialogOverlay">
+        <div class="dialog">
+            <h3>Trainingszeit buchen</h3>
+            <div class="dialog-content">
+                <div class="field-select">
+                    <label for="fieldSelect">Sportplatz:</label>
+                    <select id="fieldSelect">
+                        <option value="1">Stadion - Platz 1</option>
+                        <option value="2">Trainingsplatz - Platz 2</option>
+                        <option value="3">Trainingsplatz - Platz 3</option>
+                    </select>
+                </div>
+
+                <div class="field-select" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" id="allDayCheckbox" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="allDayCheckbox" style="margin: 0; cursor: pointer;">Ganzer Tag</label>
+                </div>
+
+                <div class="time-slot" id="timeSlotWrapper">
+                    <label>
+                        <span>Start Zeit:</span>
+                        <input type="time" id="startTime" value="18:00">
+                    </label>
+                    <label>
+                        <span>End Zeit:</span>
+                        <input type="time" id="endTime" value="19:00">
+                    </label>
+                </div>
+
+                <div class="field-select">
+                    <label for="teamSelect">Mannschaft:</label>
+                    <select id="teamSelect" required>
+                        <option value="" selected disabled>Bitte Mannschaft auswählen</option>
+                        <option value="Bambini">Bambini</option>
+                        <option value="F-Jugend">F-Jugend</option>
+                        <option value="E-Jugend">E-Jugend</option>
+                        <option value="D-Jugend">D-Jugend</option>
+                        <option value="C-Jugend">C-Jugend</option>
+                        <option value="B-Jugend">B-Jugend</option>
+                        <option value="A-Jugend">A-Jugend</option>
+                        <option value="Aktive 1">Aktive 1</option>
+                        <option value="Aktive 2">Aktive 2</option>
+                        <option value="AH">AH</option>
+                        <option value="Sonstiges">Sonstiges</option>
+                    </select>
+                </div>
+
+                <div class="field-select" id="customTeamWrapper" style="display: none;">
+                    <label for="customTeamInput">Was genau? <span style="color:#888; font-weight:normal;">(z.B. Vereinsturnier, Freundschaftsspiel)</span></label>
+                    <input type="text" id="customTeamInput" placeholder="Anlass eintragen ..." style="width: 100%; padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;">
+                </div>
+
+                <div class="field-select" id="multiDayWrapper" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem;">
+                        <input type="checkbox" id="multiDayCheckbox" style="width: 18px; height: 18px; cursor: pointer;">
+                        <label for="multiDayCheckbox" style="margin: 0; cursor: pointer;">Mehrtägige Buchung (z.B. Turnier, Trainingslager)</label>
+                    </div>
+                    <div id="multiDayDateWrapper" style="display: none;">
+                        <label for="endDateInput" style="display:block; font-weight: bold; color:#333; margin-bottom: 0.3rem;">Bis Datum (einschließlich):</label>
+                        <input type="date" id="endDateInput" style="width: 100%; padding: 0.5rem; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 1rem;">
+                        <div id="multiDayInfo" style="margin-top: 0.5rem; font-size: 0.85rem; color: #555;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dialog-buttons">
+                <button class="btn-cancel" id="cancelBtn">Abbrechen</button>
+                <button class="btn-confirm" id="confirmBtn">Buchen & Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const monthYear = document.getElementById('monthYear');
+        const calendarDays = document.getElementById('calendarDays');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const dialogOverlay = document.getElementById('dialogOverlay');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const confirmBtn = document.getElementById('confirmBtn');
+        const bookingsList = document.getElementById('bookingsList');
+        const startTimeInput = document.getElementById('startTime');
+        const endTimeInput = document.getElementById('endTime');
+        const fieldSelect = document.getElementById('fieldSelect');
+        const teamSelect = document.getElementById('teamSelect');
+        const customTeamWrapper = document.getElementById('customTeamWrapper');
+        const customTeamInput = document.getElementById('customTeamInput');
+        const allDayCheckbox = document.getElementById('allDayCheckbox');
+        const timeSlotWrapper = document.getElementById('timeSlotWrapper');
+        const multiDayWrapper = document.getElementById('multiDayWrapper');
+        const multiDayCheckbox = document.getElementById('multiDayCheckbox');
+        const multiDayDateWrapper = document.getElementById('multiDayDateWrapper');
+        const endDateInput = document.getElementById('endDateInput');
+        const multiDayInfo = document.getElementById('multiDayInfo');
+
+        function updateCustomTeamVisibility() {
+            if (!customTeamWrapper) return;
+            if (teamSelect.value === 'Sonstiges') {
+                customTeamWrapper.style.display = 'block';
+                if (multiDayWrapper) multiDayWrapper.style.display = 'block';
+            } else {
+                customTeamWrapper.style.display = 'none';
+                if (customTeamInput) customTeamInput.value = '';
+                if (multiDayWrapper) multiDayWrapper.style.display = 'none';
+                if (multiDayCheckbox) multiDayCheckbox.checked = false;
+                if (multiDayDateWrapper) multiDayDateWrapper.style.display = 'none';
+                if (endDateInput) endDateInput.value = '';
+                if (multiDayInfo) multiDayInfo.textContent = '';
+            }
+        }
+
+        function updateMultiDayInfo() {
+            if (!multiDayInfo || !endDateInput || !selectedDate) return;
+            const endVal = endDateInput.value;
+            if (!endVal) {
+                multiDayInfo.textContent = '';
+                return;
+            }
+            const startD = new Date(selectedDate);
+            const endD = new Date(endVal);
+            if (endD < startD) {
+                multiDayInfo.innerHTML = '<span style="color:#c62828;">⚠️ End-Datum muss nach dem Start-Datum liegen.</span>';
+                return;
+            }
+            const diffDays = Math.round((endD - startD) / (1000 * 60 * 60 * 24)) + 1;
+            const startStr = startD.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const endStr = endD.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            multiDayInfo.innerHTML = `📅 Buchung vom <strong>${startStr}</strong> bis <strong>${endStr}</strong> (<strong>${diffDays}</strong> Tage)`;
+        }
+
+        function updateMultiDayVisibility() {
+            if (!multiDayCheckbox || !multiDayDateWrapper) return;
+            if (multiDayCheckbox.checked) {
+                multiDayDateWrapper.style.display = 'block';
+                if (endDateInput && !endDateInput.value && selectedDate) {
+                    endDateInput.value = selectedDate;
+                }
+                if (endDateInput && selectedDate) {
+                    endDateInput.min = selectedDate;
+                }
+                updateMultiDayInfo();
+            } else {
+                multiDayDateWrapper.style.display = 'none';
+                if (endDateInput) endDateInput.value = '';
+                if (multiDayInfo) multiDayInfo.textContent = '';
+            }
+        }
+
+        function handleTeamChange() {
+            if (teamSelect.value === 'Sonstiges') {
+                const answer = prompt('Was genau? Bitte den Anlass eintragen:\n(z.B. Vereinsturnier, Freundschaftsspiel, ...)');
+                if (answer === null || answer.trim() === '') {
+                    teamSelect.value = '';
+                    if (customTeamInput) customTeamInput.value = '';
+                    updateCustomTeamVisibility();
+                    return;
+                }
+                if (customTeamInput) customTeamInput.value = answer.trim();
+            }
+            updateCustomTeamVisibility();
+        }
+
+        function updateAllDayVisibility() {
+            if (!timeSlotWrapper || !allDayCheckbox) return;
+            if (allDayCheckbox.checked) {
+                timeSlotWrapper.style.display = 'none';
+            } else {
+                timeSlotWrapper.style.display = 'grid';
+            }
+        }
+
+        teamSelect.addEventListener('change', handleTeamChange);
+        if (allDayCheckbox) allDayCheckbox.addEventListener('change', updateAllDayVisibility);
+        if (multiDayCheckbox) multiDayCheckbox.addEventListener('change', updateMultiDayVisibility);
+        if (endDateInput) endDateInput.addEventListener('change', updateMultiDayInfo);
+
+        let currentDate = new Date();
+        let selectedDate = null;
+        let bookings = [];
+        let fixedSeriesBookings = [];
+        const DAY_TO_INDEX = {
+            'Montag': 1,
+            'Dienstag': 2,
+            'Mittwoch': 3,
+            'Donnerstag': 4,
+            'Freitag': 5,
+            'Samstag': 6,
+            'Sonntag': 0
+        };
+        const FIXED_TRAINING_SERIES = [
+            { team: 'Bambini', day: 'Freitag', startTime: '17:00', endTime: '18:00', field: 'Platz 1' },
+            { team: 'F-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 1' },
+            { team: 'E-Jugend', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 2' },
+            { team: 'E-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 2' },
+            { team: 'D-Jugend', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
+            { team: 'D-Jugend', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
+            { team: 'C-Jugend', day: 'Montag', startTime: '18:00', endTime: '19:30', field: 'Platz 2' },
+            { team: 'C-Jugend', day: 'Donnerstag', startTime: '17:00', endTime: '18:30', field: 'Platz 3' },
+            { team: 'B-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },            
+            { team: 'A-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },           
+            { team: 'Aktive 1', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
+            { team: 'Aktive 1', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
+            { team: 'Aktive 2', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
+            { team: 'Aktive 2', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
+            { team: 'AH', day: 'Freitag', startTime: '18:00', endTime: '19:30', field: 'Platz 1' }
+        ];
+        const USERS_STORAGE_KEY = 'youthCoaches';
+        const SESSION_KEY = 'currentUserId';
+        let currentUser = null;
+
+        function getActiveUsers() {
+            try {
+                const stored = localStorage.getItem(USERS_STORAGE_KEY);
+                if (!stored) return [];
+                const list = JSON.parse(stored);
+                if (!Array.isArray(list)) return [];
+                return list.filter(u => u && u.status === 'active' && u.code);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function getCurrentUser() {
+            const id = sessionStorage.getItem(SESSION_KEY);
+            if (!id) return null;
+            return getActiveUsers().find(u => String(u.id) === String(id)) || null;
+        }
+
+        function renderLoginBar() {
+            const loginInfo = document.getElementById('loginInfo');
+            const loginForm = document.getElementById('loginForm');
+            if (!loginInfo || !loginForm) return;
+
+            if (currentUser) {
+                const isAdmin = currentUser.role === 'Admin';
+                loginInfo.innerHTML = `Eingeloggt als <strong>${currentUser.name}</strong> (${currentUser.role})${isAdmin ? ' – Alle Mannschaften buchbar' : ' – Mannschaft: ' + currentUser.team}`;
+                loginForm.innerHTML = '<button type="button" class="logout-btn" id="logoutBtn">Abmelden</button>';
+                document.getElementById('logoutBtn').addEventListener('click', logout);
+            } else {
+                loginInfo.textContent = 'Nicht angemeldet – Bitte mit Trainer-Code anmelden, um zu buchen.';
+                loginForm.innerHTML = `
+                    <input type="password" id="loginCodeInput" placeholder="Code" maxlength="6">
+                    <button type="submit">Anmelden</button>
+                `;
+            }
+        }
+
+        function tryLogin(code) {
+            const user = getActiveUsers().find(u => String(u.code) === String(code));
+            if (!user) {
+                alert('Ungültiger Code oder Benutzer ist inaktiv.');
+                return;
+            }
+            sessionStorage.setItem(SESSION_KEY, user.id);
+            currentUser = user;
+            renderLoginBar();
+            renderBookings();
+        }
+
+        function logout() {
+            sessionStorage.removeItem(SESSION_KEY);
+            currentUser = null;
+            renderLoginBar();
+            renderBookings();
+        }
+
+        function getValidTrainerCodes() {
+            try {
+                const stored = localStorage.getItem(USERS_STORAGE_KEY);
+                if (!stored) return [];
+                const list = JSON.parse(stored);
+                if (!Array.isArray(list)) return [];
+                return list
+                    .filter(u => u && u.status === 'active' && u.code)
+                    .map(u => String(u.code));
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function isValidTrainerCode(code) {
+            if (!code) return false;
+            const validCodes = getValidTrainerCodes();
+            if (validCodes.length === 0) {
+                return code === '1234';
+            }
+            return validCodes.includes(String(code));
+        }
+
+        function getAllBookings() {
+            return [...fixedSeriesBookings, ...bookings];
+        }
+
+        function getFieldIdFromText(fieldText) {
+            const match = fieldText.match(/Platz\s*([123])/i);
+            return match ? match[1] : fieldText;
+        }
+
+        const DELETED_SERIES_KEY = 'deletedFixedSeriesBookings';
+
+        function getDeletedSeriesIds() {
+            try {
+                const stored = localStorage.getItem(DELETED_SERIES_KEY);
+                if (!stored) return [];
+                const list = JSON.parse(stored);
+                return Array.isArray(list) ? list : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveDeletedSeriesIds(list) {
+            if (window.SFL) {
+                window.SFL.save(DELETED_SERIES_KEY, list);
+            } else {
+                localStorage.setItem(DELETED_SERIES_KEY, JSON.stringify(list));
+            }
+        }
+
+        function generateFixedSeriesBookings() {
+            const startDate = new Date();
+            const endDate = new Date(currentDate.getFullYear() + 1, 11, 31);
+            const generated = [];
+            const deletedIds = new Set(getDeletedSeriesIds());
+
+            FIXED_TRAINING_SERIES.forEach((series) => {
+                const targetWeekday = DAY_TO_INDEX[series.day];
+                if (targetWeekday === undefined) return;
+
+                const dateCursor = new Date(startDate);
+                const dayOffset = (targetWeekday - dateCursor.getDay() + 7) % 7;
+                dateCursor.setDate(dateCursor.getDate() + dayOffset);
+
+                while (dateCursor <= endDate) {
+                    const id = `fixed-${series.team}-${series.day}-${formatDate(dateCursor)}-${series.startTime}`;
+                    if (!deletedIds.has(id)) {
+                        generated.push({
+                            id: id,
+                            date: formatDate(dateCursor),
+                            field: series.field,
+                            fieldId: getFieldIdFromText(series.field),
+                            team: series.team,
+                            startTime: series.startTime,
+                            endTime: series.endTime,
+                            isFixedSeries: true
+                        });
+                    }
+                    dateCursor.setDate(dateCursor.getDate() + 7);
+                }
+            });
+
+            fixedSeriesBookings = generated;
+        }
+
+        // Kalender rendern
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            // Monatsname
+            const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+            monthYear.textContent = `${monthNames[month]} ${year}`;
+
+            // Erste und letzte Tage des Monats
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const prevLastDay = new Date(year, month, 0).getDate();
+
+            let html = '';
+
+            // Tage des vorherigen Monats
+            for (let i = firstDay.getDay() - 1; i > 0; i--) {
+                html += `<div class="day other-month">${prevLastDay - i + 1}</div>`;
+            }
+
+            // Tage des aktuellen Monats
+            const today = new Date();
+            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            for (let i = 1; i <= lastDay.getDate(); i++) {
+                const date = new Date(year, month, i);
+                const dateStr = formatDate(date);
+                const isPast = date < todayMidnight;
+
+                let classes = 'day';
+
+                if (date.toDateString() === today.toDateString()) {
+                    classes += ' today';
+                } else if (isPast) {
+                    classes += ' past';
+                }
+
+                if (getAllBookings().some(b => b.date === dateStr)) {
+                    classes += ' booked';
+                }
+
+                if (selectedDate && date.toDateString() === new Date(selectedDate).toDateString()) {
+                    classes += ' selected';
+                }
+
+                const clickHandler = isPast ? '' : ` onclick="selectDate('${dateStr}')"`;
+                html += `<div class="${classes}"${clickHandler}>${i}</div>`;
+            }
+
+            // Tage des nächsten Monats
+            const remainingDays = 42 - (firstDay.getDay() - 1) - lastDay.getDate();
+            for (let i = 1; i <= remainingDays; i++) {
+                html += `<div class="day other-month">${i}</div>`;
+            }
+
+            calendarDays.innerHTML = html;
+        }
+
+        // Datum formatieren (YYYY-MM-DD)
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function applyTeamRestrictions() {
+            const allOptions = teamSelect.querySelectorAll('option');
+            allOptions.forEach(opt => {
+                opt.hidden = false;
+                opt.disabled = opt.value === '';
+            });
+
+            if (!currentUser) {
+                teamSelect.value = '';
+                teamSelect.disabled = false;
+                return;
+            }
+
+            const isAdmin = currentUser.role === 'Admin';
+            if (isAdmin) {
+                teamSelect.disabled = false;
+                teamSelect.value = '';
+                return;
+            }
+
+            const userTeam = currentUser.team;
+            let hasMatch = false;
+            allOptions.forEach(opt => {
+                if (opt.value === '') {
+                    opt.hidden = true;
+                    return;
+                }
+                if (opt.value === userTeam || opt.value === 'Sonstiges') {
+                    if (opt.value === userTeam) hasMatch = true;
+                } else {
+                    opt.hidden = true;
+                }
+            });
+
+            if (hasMatch) {
+                teamSelect.value = userTeam;
+                teamSelect.disabled = false;
+            } else {
+                teamSelect.value = '';
+                teamSelect.disabled = false;
+                allOptions.forEach(opt => { opt.hidden = false; });
+            }
+            updateCustomTeamVisibility();
+        }
+
+        function scrollOverviewToDate(dateStr) {
+            const titles = bookingsList.querySelectorAll(`.booking-subday-title[data-date="${dateStr}"]`);
+
+            bookingsList.querySelectorAll('.booking-subday-title.highlight').forEach(el => {
+                el.classList.remove('highlight');
+            });
+
+            titles.forEach(title => {
+                const column = title.closest('.field-view-column');
+                if (column) {
+                    const offset = title.offsetTop - column.offsetTop - 4;
+                    column.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+                }
+                title.classList.add('highlight');
+                setTimeout(() => title.classList.remove('highlight'), 2500);
+            });
+        }
+
+        // Datum auswählen
+        function selectDate(dateStr) {
+            selectedDate = dateStr;
+            renderCalendar();
+            scrollOverviewToDate(dateStr);
+            renderAvailability(dateStr);
+
+            if (!currentUser) {
+                return;
+            }
+
+            applyTeamRestrictions();
+            dialogOverlay.classList.add('active');
+            calculatePrice();
+        }
+
+        // Preis berechnen
+        function calculatePrice() {
+            const startTime = startTimeInput.value;
+            const endTime = endTimeInput.value;
+            
+            if (startTime && endTime) {
+                const [startHour, startMin] = startTime.split(':').map(Number);
+                const [endHour, endMin] = endTime.split(':').map(Number);
+                
+                const startTotalMin = startHour * 60 + startMin;
+                const endTotalMin = endHour * 60 + endMin;
+                
+                let hours = (endTotalMin - startTotalMin) / 60;
+                
+                if (hours < 0) hours += 24;
+                if (hours === 0) hours = 1;
+            }
+        }
+
+        function timeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function getTimeRanges(startTime, endTime) {
+            const startMin = timeToMinutes(startTime);
+            const endMin = timeToMinutes(endTime);
+
+            if (endMin <= startMin) {
+                return [
+                    [startMin, 24 * 60],
+                    [0, endMin]
+                ];
+            }
+
+            return [[startMin, endMin]];
+        }
+
+        function rangesOverlap(rangeA, rangeB) {
+            return rangeA[0] < rangeB[1] && rangeB[0] < rangeA[1];
+        }
+
+        function hasDoubleBooking(newBooking) {
+            const newRanges = getTimeRanges(newBooking.startTime, newBooking.endTime);
+
+            return getAllBookings().some(existingBooking => {
+                const sameDate = existingBooking.date === newBooking.date;
+                const sameField = existingBooking.fieldId === newBooking.fieldId;
+
+                if (!sameDate || !sameField) return false;
+
+                const existingRanges = getTimeRanges(existingBooking.startTime, existingBooking.endTime);
+
+                return newRanges.some(nRange =>
+                    existingRanges.some(eRange => rangesOverlap(nRange, eRange))
+                );
+            });
+        }
+
+        // Event Listener für Zeit-Input
+        startTimeInput.addEventListener('change', calculatePrice);
+        endTimeInput.addEventListener('change', calculatePrice);
+
+        // Dialog abbrechen
+        cancelBtn.addEventListener('click', () => {
+            dialogOverlay.classList.remove('active');
+            selectedDate = null;
+            if (customTeamInput) customTeamInput.value = '';
+            if (allDayCheckbox) allDayCheckbox.checked = false;
+            if (multiDayCheckbox) multiDayCheckbox.checked = false;
+            if (endDateInput) endDateInput.value = '';
+            if (multiDayInfo) multiDayInfo.textContent = '';
+            updateCustomTeamVisibility();
+            updateAllDayVisibility();
+            renderCalendar();
+        });
+
+        // Dialog bestätigen
+        confirmBtn.addEventListener('click', () => {
+            if (!teamSelect.value) {
+                alert('Bitte wähle eine Mannschaft aus.');
+                return;
+            }
+
+            let teamValue = teamSelect.value;
+            const isOther = teamValue === 'Sonstiges';
+            if (isOther) {
+                const customText = customTeamInput ? customTeamInput.value.trim() : '';
+                if (!customText) {
+                    alert('Bitte gib an, worum es genau geht.');
+                    if (customTeamInput) customTeamInput.focus();
+                    return;
+                }
+                teamValue = 'Sonstiges: ' + customText;
+            }
+
+            const isAllDay = allDayCheckbox && allDayCheckbox.checked;
+            const startValue = isAllDay ? '00:00' : startTimeInput.value;
+            const endValue = isAllDay ? '23:59' : endTimeInput.value;
+
+            if (!selectedDate || !startValue || !endValue) return;
+
+            const isMultiDay = isOther && multiDayCheckbox && multiDayCheckbox.checked && endDateInput && endDateInput.value;
+
+            const dateList = [];
+            if (isMultiDay) {
+                const startD = new Date(selectedDate);
+                const endD = new Date(endDateInput.value);
+                if (endD < startD) {
+                    alert('Das End-Datum muss nach dem Start-Datum liegen.');
+                    return;
+                }
+                const cursor = new Date(startD);
+                while (cursor <= endD) {
+                    dateList.push(formatDate(cursor));
+                    cursor.setDate(cursor.getDate() + 1);
+                }
+            } else {
+                dateList.push(selectedDate);
+            }
+
+            const isAdmin = currentUser && currentUser.role === 'Admin';
+            const fieldText = fieldSelect.options[fieldSelect.selectedIndex].text;
+            const fieldId = fieldSelect.value;
+
+            const newBookings = dateList.map((d, idx) => ({
+                id: Date.now() + idx,
+                date: d,
+                field: fieldText,
+                fieldId: fieldId,
+                team: teamValue,
+                startTime: startValue,
+                endTime: endValue,
+                allDay: !!isAllDay
+            }));
+
+            const conflicts = newBookings.filter(b => hasDoubleBooking(b));
+
+            if (conflicts.length > 0) {
+                const conflictDates = conflicts.map(c => {
+                    const d = new Date(c.date);
+                    return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                }).join(', ');
+
+                if (!isAdmin) {
+                    alert('Doppelbuchung nicht möglich. Folgende Tage sind bereits belegt:\n' + conflictDates);
+                    return;
+                }
+                if (!confirm('Hinweis: An folgenden Tagen existiert bereits eine Buchung für diesen Platz:\n' + conflictDates + '\n\nAls Admin kannst du trotzdem buchen. Fortfahren?')) {
+                    return;
+                }
+            }
+
+            newBookings.forEach(b => bookings.push(b));
+            saveBookings();
+            renderBookings();
+            renderCalendar();
+            renderAvailability();
+
+            if (isMultiDay) {
+                alert(`✅ ${newBookings.length} Tage erfolgreich gebucht.`);
+            }
+
+            dialogOverlay.classList.remove('active');
+            selectedDate = null;
+            if (customTeamInput) customTeamInput.value = '';
+            if (allDayCheckbox) allDayCheckbox.checked = false;
+            if (multiDayCheckbox) multiDayCheckbox.checked = false;
+            if (endDateInput) endDateInput.value = '';
+            if (multiDayInfo) multiDayInfo.textContent = '';
+            updateCustomTeamVisibility();
+            updateAllDayVisibility();
+        });
+
+        // Vorheriger Monat
+        prevBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        // Nächster Monat
+        nextBtn.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Belegungsübersicht
+        const availabilityDateInput = document.getElementById('availabilityDate');
+        const availabilityGrid = document.getElementById('availabilityGrid');
+        const AVAIL_HOUR_START = 8;
+        const AVAIL_HOUR_END = 22;
+
+        function renderAvailability(dateStr) {
+            if (!availabilityGrid) return;
+            const targetDate = dateStr || (availabilityDateInput && availabilityDateInput.value) || formatDate(new Date());
+            if (availabilityDateInput && availabilityDateInput.value !== targetDate) {
+                availabilityDateInput.value = targetDate;
+            }
+
+            const totalMinutes = (AVAIL_HOUR_END - AVAIL_HOUR_START) * 60;
+            const fields = [
+                { id: '1', label: '📍 Platz 1' },
+                { id: '2', label: '📍 Platz 2' },
+                { id: '3', label: '📍 Platz 3' }
+            ];
+
+            const dayBookings = getAllBookings().filter(b => b.date === targetDate);
+
+            let markersHtml = '';
+            for (let h = AVAIL_HOUR_START; h < AVAIL_HOUR_END; h++) {
+                markersHtml += `<div class="availability-hour-marker">${h}:00</div>`;
+            }
+
+            let html = '';
+            fields.forEach(field => {
+                const fieldBookings = dayBookings.filter(b => {
+                    const fid = String(b.fieldId || getFieldIdFromText(b.field) || '');
+                    return fid === field.id;
+                });
+
+                let bookingsHtml = '';
+                fieldBookings.forEach(b => {
+                    if (!b.startTime || !b.endTime) return;
+                    const startMin = timeToMinutes(b.startTime);
+                    let endMin = timeToMinutes(b.endTime);
+                    if (endMin <= startMin) endMin = AVAIL_HOUR_END * 60;
+
+                    const startOffset = Math.max(0, startMin - AVAIL_HOUR_START * 60);
+                    const endOffset = Math.min(totalMinutes, endMin - AVAIL_HOUR_START * 60);
+
+                    if (endOffset <= 0 || startOffset >= totalMinutes) return;
+
+                    const left = (startOffset / totalMinutes) * 100;
+                    const width = ((endOffset - startOffset) / totalMinutes) * 100;
+                    const timeLabel = b.allDay ? 'Ganzer Tag' : `${b.startTime}-${b.endTime}`;
+                    const teamLabel = b.team || 'Unbekannt';
+                    const cls = b.isFixedSeries ? 'availability-booking fixed-series' : 'availability-booking';
+                    const title = `${teamLabel} | ${timeLabel}`;
+
+                    bookingsHtml += `
+                        <div class="${cls}" style="left:${left}%; width:${width}%;" title="${title.replace(/"/g, '&quot;')}">
+                            ${teamLabel} · ${timeLabel}
+                        </div>
+                    `;
+                });
+
+                if (!bookingsHtml) {
+                    bookingsHtml = '';
+                }
+
+                html += `
+                    <div class="availability-row">
+                        <div class="availability-label">${field.label}</div>
+                        <div class="availability-track">
+                            <div class="availability-hours">${markersHtml}</div>
+                            ${bookingsHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            availabilityGrid.innerHTML = html;
+        }
+
+        if (availabilityDateInput) {
+            availabilityDateInput.value = formatDate(new Date());
+            availabilityDateInput.addEventListener('change', () => {
+                renderAvailability(availabilityDateInput.value);
+            });
+        }
+
+        // Buchungen anzeigen
+        function renderBookings() {
+            const todayStr = formatDate(new Date());
+            const allBookings = getAllBookings().filter(booking => booking.date >= todayStr);
+
+            if (allBookings.length === 0) {
+                bookingsList.innerHTML = '<div class="empty-message">Keine gebuchten Zeiten vorhanden</div>';
+                return;
+            }
+
+            const sortedBookings = [...allBookings].sort((a, b) => {
+                const dateCompare = new Date(a.date) - new Date(b.date);
+                if (dateCompare !== 0) return dateCompare;
+                return a.startTime.localeCompare(b.startTime);
+            });
+
+            const groupedByFieldId = sortedBookings.reduce((acc, booking) => {
+                const key = String(booking.fieldId || getFieldIdFromText(booking.field) || '');
+                if (!acc[key]) {
+                    acc[key] = [];
+                }
+                acc[key].push(booking);
+                return acc;
+            }, {});
+            const fieldColumns = [
+                { id: '1', label: 'Platz 1' },
+                { id: '2', label: 'Platz 2' },
+                { id: '3', label: 'Platz 3' }
+            ];
+
+            let html = '';
+            html += '<div class="field-views-grid">';
+
+            fieldColumns.forEach((fieldColumn) => {
+                const fieldBookings = groupedByFieldId[fieldColumn.id] || [];
+                html += `
+                    <div class="field-view-column">
+                        <h3 class="booking-day-title">📍 ${fieldColumn.label}</h3>
+                `;
+
+                if (!fieldBookings.length) {
+                    html += '<div class="empty-message">Keine Buchungen</div>';
+                } else {
+                    const groupedByDate = fieldBookings.reduce((acc, booking) => {
+                        if (!acc[booking.date]) {
+                            acc[booking.date] = [];
+                        }
+                        acc[booking.date].push(booking);
+                        return acc;
+                    }, {});
+
+                    Object.keys(groupedByDate).forEach((dateKey) => {
+                        const dateObj = new Date(dateKey);
+                        const dateStr = dateObj.toLocaleDateString('de-DE', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+
+                        html += `<h4 class="booking-subday-title" data-date="${dateKey}">📅 ${dateStr}</h4>`;
+
+                        const isAdmin = currentUser && currentUser.role === 'Admin';
+                        groupedByDate[dateKey].forEach(booking => {
+                            let actionElement;
+                            if (booking.isFixedSeries) {
+                                if (isAdmin) {
+                                    actionElement = `
+                                        <span style="display:inline-flex; gap:0.4rem; align-items:center;">
+                                            <span class="booking-fixed-badge">Serie</span>
+                                            <button class="booking-delete" onclick="deleteBooking('${booking.id}', true)">Löschen</button>
+                                        </span>
+                                    `;
+                                } else {
+                                    actionElement = '<span class="booking-fixed-badge">Serie</span>';
+                                }
+                            } else {
+                                actionElement = `<button class="booking-delete" onclick="deleteBooking('${booking.id}', false)">Löschen</button>`;
+                            }
+
+                            const timeDisplay = booking.allDay
+                                ? '🕐 Ganzer Tag'
+                                : `🕐 ${booking.startTime} - ${booking.endTime}`;
+
+                            html += `
+                                <div class="booking-item">
+                                    <div class="booking-info">
+                                        <h4>⚽ ${booking.team || 'Keine Mannschaft'}</h4>
+                                        <p>${timeDisplay}</p>
+                                    </div>
+                                    ${actionElement}
+                                </div>
+                            `;
+                        });
+                    });
+                }
+
+                html += '</div>';
+            });
+            html += '</div>';
+
+            bookingsList.innerHTML = html;
+        }
+
+        // Buchung löschen
+        function deleteBooking(id, isFixedSeries) {
+            if (isFixedSeries) {
+                if (!currentUser || currentUser.role !== 'Admin') {
+                    alert('Serien-Termine können nur von Administratoren gelöscht werden.');
+                    return;
+                }
+                if (!confirm('Diesen Serien-Termin wirklich entfernen?\n(Nur dieser einzelne Termin wird gelöscht.)')) {
+                    return;
+                }
+                const deletedIds = getDeletedSeriesIds();
+                if (!deletedIds.includes(id)) {
+                    deletedIds.push(id);
+                    saveDeletedSeriesIds(deletedIds);
+                }
+                generateFixedSeriesBookings();
+                renderBookings();
+                renderCalendar();
+                renderAvailability();
+                return;
+            }
+
+            const enteredCode = prompt('Bitte Trainer-Code zum Löschen eingeben:');
+
+            if (enteredCode === null) {
+                return;
+            }
+
+            if (!isValidTrainerCode(enteredCode)) {
+                alert('Falscher Trainer-Code. Löschen nicht erlaubt.');
+                return;
+            }
+
+            const numericId = Number(id);
+            bookings = bookings.filter(b => String(b.id) !== String(id) && b.id !== numericId);
+            saveBookings();
+            renderBookings();
+            renderCalendar();
+            renderAvailability();
+        }
+
+        // Buchungen speichern (Firebase + localStorage)
+        function saveBookings() {
+            if (window.SFL) {
+                window.SFL.save('sportplatzBookings', bookings);
+            } else {
+                localStorage.setItem('sportplatzBookings', JSON.stringify(bookings));
+            }
+        }
+
+        // Buchungen laden
+        function loadBookings() {
+            const saved = localStorage.getItem('sportplatzBookings');
+            if (saved) {
+                try { bookings = JSON.parse(saved) || []; } catch (e) { bookings = []; }
+            }
+        }
+
+        if (window.SFL) {
+            window.SFL.subscribe('sportplatzBookings', (data) => {
+                bookings = Array.isArray(data) ? data : [];
+                renderBookings();
+                renderCalendar();
+                renderAvailability();
+            });
+            window.SFL.subscribe('youthCoaches', () => {
+                currentUser = getCurrentUser();
+                renderLoginBar();
+                renderBookings();
+            });
+            window.SFL.subscribe('deletedFixedSeriesBookings', () => {
+                generateFixedSeriesBookings();
+                renderBookings();
+                renderCalendar();
+                renderAvailability();
+            });
+        }
+
+        // Init
+        loadBookings();
+        generateFixedSeriesBookings();
+        currentUser = getCurrentUser();
+        renderLoginBar();
+
+        document.addEventListener('submit', (e) => {
+            if (e.target && e.target.id === 'loginForm') {
+                e.preventDefault();
+                const input = document.getElementById('loginCodeInput');
+                if (!input) return;
+                const code = input.value.trim();
+                if (!code) return;
+                tryLogin(code);
+            }
+        });
+
+        renderCalendar();
+        renderBookings();
+        renderAvailability();
+    </script>
+    <script src="pwa-register.js"></script>
+</body>
+</html>
