@@ -21,6 +21,11 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            overflow-x: hidden;
+            max-width: 100%;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #000000 0%, #333333 100%);
@@ -536,16 +541,119 @@
         }
 
         @media (max-width: 768px) {
-            .content {
-                grid-template-columns: 1fr;
+            body {
+                padding: 0;
+            }
+
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+                max-width: 100%;
+            }
+
+            .header {
+                padding: 1rem 0.75rem;
             }
 
             .header h1 {
-                font-size: 1.8rem;
+                font-size: 1.3rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .header p {
+                font-size: 0.85rem;
+            }
+
+            .back-btn {
+                top: 0.6rem;
+                right: 0.6rem;
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
+            }
+
+            .login-bar {
+                padding: 0.6rem 0.75rem;
+                font-size: 0.85rem;
+            }
+
+            .login-bar .login-info {
+                font-size: 0.8rem;
+                line-height: 1.3;
+            }
+
+            .content {
+                grid-template-columns: 1fr;
+                gap: 1.25rem;
+                padding: 0.75rem;
+            }
+
+            .calendar-section h2,
+            .bookings-section h2 {
+                font-size: 1.2rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .calendar-nav button {
+                padding: 0.4rem 0.7rem;
+                font-size: 0.85rem;
+            }
+
+            .month-year {
+                font-size: 1.05rem;
+            }
+
+            .weekdays {
+                gap: 0.25rem;
+                margin-bottom: 0.25rem;
+            }
+
+            .weekday {
+                padding: 0.4rem 0.2rem;
+                font-size: 0.75rem;
+            }
+
+            .days {
+                gap: 0.25rem;
             }
 
             .day {
                 font-size: 0.8rem;
+                border-width: 1px;
+                border-radius: 4px;
+            }
+
+            .bookings-section {
+                padding: 0.75rem;
+            }
+
+            .booking-item {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.7rem;
+            }
+
+            .dialog {
+                padding: 1.25rem;
+                max-width: 95vw;
+            }
+
+            .dialog h3 {
+                font-size: 1.15rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .header h1 {
+                font-size: 1.1rem;
+            }
+
+            .day {
+                font-size: 0.7rem;
+            }
+
+            .weekday {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.1rem;
             }
         }
     </style>
