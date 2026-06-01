@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sportplatz Manager - Deine Sportplatz Verwaltung</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-sync.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .logo img {
+            height: 90px;
+            width: auto;
+            display: block;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .stadium-wrapper {
+            position: relative;
+            width: 100%;
+            background-color: #1f3a25;
+            background-image:
+                linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(20, 40, 25, 0.35) 35%, rgba(20, 40, 25, 0.45) 100%),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 255, 255, 0.05) 0px,
+                    rgba(255, 255, 255, 0.05) 40px,
+                    rgba(0, 0, 0, 0.05) 40px,
+                    rgba(0, 0, 0, 0.05) 80px
+                ),
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 520' preserveAspectRatio='xMidYMid slice'><g fill='none' stroke='%23ffffff' stroke-width='3' stroke-opacity='0.7'><rect x='30' y='30' width='740' height='460'/><line x1='400' y1='30' x2='400' y2='490'/><circle cx='400' cy='260' r='70'/><circle cx='400' cy='260' r='3' fill='%23ffffff' stroke='none'/><rect x='30' y='130' width='130' height='260'/><rect x='30' y='190' width='55' height='140'/><rect x='640' y='130' width='130' height='260'/><rect x='715' y='190' width='55' height='140'/><circle cx='150' cy='260' r='3' fill='%23ffffff' stroke='none'/><circle cx='650' cy='260' r='3' fill='%23ffffff' stroke='none'/><path d='M 160 200 A 70 70 0 0 1 160 320'/><path d='M 640 200 A 70 70 0 0 0 640 320'/><rect x='15' y='235' width='15' height='50'/><rect x='770' y='235' width='15' height='50'/><path d='M 30 30 Q 50 30 50 50'/><path d='M 770 30 Q 750 30 750 50'/><path d='M 30 490 Q 50 490 50 470'/><path d='M 770 490 Q 750 490 750 470'/></g></svg>");
+            background-position: center top;
+            background-size: cover;
+            background-repeat: no-repeat;
+        }
+
+        .hero {
+            background: transparent;
+            color: white;
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .hero h1,
+        .hero p {
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+        }
+
+        .hero-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #000000;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            color: #000000;
+        }
+
+        .features {
+            position: relative;
+            width: 100%;
+            padding: 3rem 2rem 5rem;
+            background: transparent;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin: 0 auto 3rem auto;
+            max-width: 1200px;
+            color: #ffffff;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #e9ecef;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.35);
+            background: #fafafa;
+            border-color: #000000;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            color: #000000;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            color: #666;
+        }
+
+        /* Austausch / Chat Bereich */
+        .chat-section {
+            background: #f8f9fa;
+            padding: 4rem 2rem;
+            margin: 4rem 0;
+        }
+
+        .chat-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .chat-section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+
+        .chat-intro {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .chat-box {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .chat-header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .chat-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .chat-status .online-dot {
+            width: 10px;
+            height: 10px;
+            background: #2ecc71;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.7);
+        }
+
+        .chat-user-info {
+            font-size: 0.85rem;
+            opacity: 0.95;
+        }
+
+        .chat-logout {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            padding: 0.3rem 0.7rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .chat-logout:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-height: 450px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .chat-empty {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            margin: auto 0;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-start;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #000000 0%, #444 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+        .chat-message.own .chat-avatar {
+            background: linear-gradient(135deg, #1a7f3c 0%, #2ecc71 100%);
+        }
+
+        .chat-bubble {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 0.7rem 1rem;
+            max-width: 75%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .chat-message.own {
+            flex-direction: row-reverse;
+        }
+
+        .chat-message.own .chat-bubble {
+            background: #e8f5ed;
+            border-color: #c8e6d2;
+        }
+
+        .chat-bubble-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.8rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .chat-bubble-name {
+            font-weight: 600;
+            color: #000;
+            font-size: 0.9rem;
+        }
+
+        .chat-bubble-time {
+            color: #888;
+            font-size: 0.75rem;
+        }
+
+        .chat-bubble-text {
+            color: #333;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .chat-delete {
+            background: transparent;
+            border: none;
+            color: #c0392b;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-top: 0.3rem;
+            padding: 0;
+            opacity: 0.7;
+        }
+
+        .chat-delete:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid #e9ecef;
+            background: #ffffff;
+            display: flex;
+            gap: 0.6rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input:focus {
+            border-color: #000000;
+        }
+
+        .chat-send-btn {
+            background: linear-gradient(135deg, #000000 0%, #333 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 1.4rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+
+        .chat-send-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Login Bereich */
+        .chat-login {
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .chat-login h3 {
+            color: #000;
+            margin-bottom: 0.5rem;
+            font-size: 1.4rem;
+        }
+
+        .chat-login p {
+            color: #666;
+            margin-bottom: 1.5rem;
+        }
+
+        .chat-login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+
+        .chat-login-form input {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-login-form input:focus {
+            border-color: #000;
+        }
+
+        .chat-login-form button {
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .chat-login-form button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+
+        .chat-login-error {
+            color: #c0392b;
+            font-size: 0.85rem;
+            min-height: 1.1rem;
+        }
+
+        .chat-hint {
+            text-align: center;
+            color: #888;
+            font-size: 0.8rem;
+            margin-top: 0.8rem;
+        }
+
+        .contacts {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+        }
+
+        .contacts h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #000000;
+        }
+
+        .contacts .contacts-intro {
+            text-align: center;
+            color: #666;
+            margin-bottom: 3rem;
+        }
+
+        .contacts {
+            max-width: 1400px;
+        }
+
+        .contacts-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .contact-card {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .contact-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #000000;
+        }
+
+        .contact-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-avatar img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            filter: contrast(1.08) saturate(1.05);
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        .contact-name {
+            color: #333;
+            margin-bottom: 0.25rem;
+            font-size: 1.2rem;
+        }
+
+        .contact-role {
+            color: #555555;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            font-size: 0.95rem;
+        }
+
+        .contact-function {
+            color: #000000;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            background: #f0f0f0;
+            border-radius: 999px;
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+        }
+
+        .contact-details {
+            color: #555;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        .contact-details a {
+            color: #000000;
+            text-decoration: none;
+        }
+
+        .contact-details a:hover {
+            text-decoration: underline;
+        }
+
+        .downloads {
+            background: #f8f9fa;
+            padding: 4rem 2rem;
+            margin: 4rem 0 0 0;
+        }
+
+        .downloads-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .downloads h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: #000000;
+        }
+
+        .downloads-intro {
+            text-align: center;
+            color: #666;
+            margin-bottom: 3rem;
+        }
+
+        .downloads-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .download-card {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+        }
+
+        .download-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            border-color: #000000;
+        }
+
+        .download-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .download-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .download-title {
+            color: #000000;
+            font-size: 1.15rem;
+            margin: 0;
+        }
+
+        .download-description {
+            color: #666;
+            font-size: 0.92rem;
+            margin-bottom: 1rem;
+            flex-grow: 1;
+        }
+
+        .download-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #555;
+            padding-top: 0.75rem;
+            border-top: 1px solid #eee;
+        }
+
+        .download-badge {
+            background: #000000;
+            color: white;
+            border-radius: 4px;
+            padding: 0.2rem 0.55rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .download-action {
+            color: #000000;
+            font-weight: 600;
+        }
+
+        .footer {
+            background: #000000;
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #cccccc;
+        }
+
+        .footer p {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .chat-bubble {
+                max-width: 85%;
+            }
+
+            .chat-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .contacts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .contacts {
+                max-width: 100%;
+            }
+
+            .downloads-grid {
+                grid-template-columns: 1fr;
+            }
+
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <a href="index.html" class="logo">
+                <img src="assets/logo.png" alt="Sportfreunde Lauffen Logo">
+                <span>Sportfreunde Lauffen</span>
+            </a>
+            <ul class="nav-links">
+                <li><a href="#features">Funktionen</a></li>
+                <li><a href="#austausch">Austausch</a></li>
+                <li><a href="#contacts">Ansprechpartner</a></li>
+                <li><a href="#downloads">Downloads</a></li>
+                <li><a href="https://team.jako.com/de-de/team/sportfreunde_lauffen_jugend/">SFL-Shop Jugend</a></li>
+                <li><a href="https://team.jako.com/de-de/team/sportfreunde_lauffen_aktive/">SFL-Shop Aktive</a></li>
+                <li><a href="https://www.sportfreunde-lauffen.de">Sportfreunde Lauffen Website</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Stadium Section (Hero + Features auf einem Fußballfeld) -->
+    <div class="stadium-wrapper">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-content">
+                <h1>⚽ Ulrichsheide Manager</h1>
+                <p>Die vollständige Lösung für Sportplatz-Verwaltung, Buchungen und Sonstiges.</p
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features" id="features">
+            <h2>🎯 Hauptfunktionen</h2>
+            <div class="features-grid">
+            <a href="booking-calendar.html" class="feature-card">
+                <div class="feature-icon">📅</div>
+                <h3>Buchungsverwaltung</h3>
+                <p>Verwalte alle Sportplatz-Buchungen einfach und übersichtlich. Echtzeit-Verfügbarkeit und flexible Zeiten.</p>
+            </a>
+            <a href="bus-booking.html" class="feature-card">
+                <div class="feature-icon">🚌</div>
+                <h3>Busreservierung</h3>
+                <p>Reserviere den Vereinsbus für Auswärtsspiele, Turniere und Vereinsausflüge.</p>
+            </a>
+            <a href="fields.html" class="feature-card">
+                <div class="feature-icon">⚽</div>
+                <h3>Feldverwaltung</h3>
+                <p>Übersichts aller Sportplätze und Hallen auf einen Blick.</p>
+            </a>
+            <a href="users.html" class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Benutzerverwaltung</h3>
+                <p>Sichere Authentifizierung mit JWT. Admin- und Benutzerrollen für granulare Kontrolle.</p>
+            </a>
+            <a href="analytics.html" class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Analytics & Berichte</h3>
+                <p>Detaillierte Statistiken über Auslastung, Einnahmen und Wartungskosten.</p>
+            </a>
+            <a href="#features" class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Plattformübergreifend</h3>
+                <p>iOS, Android, Web - eine App für alle Geräte mit React Native.</p>
+            </a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Austausch / Chat Section -->
+    <section class="chat-section" id="austausch">
+        <div class="chat-container">
+            <h2>💬 Austausch</h2>
+            <p class="chat-intro">Tausche dich mit anderen Vereinsfunktionären der Sportfreunde Lauffen aus. Nach dem Login kannst du Nachrichten schreiben.</p>
+
+            <div class="chat-box">
+                <!-- Login Bereich (sichtbar wenn nicht eingeloggt) -->
+                <div id="chatLogin" class="chat-login">
+                    <h3>🔐 Anmeldung</h3>
+                    <p>Bitte gib deinen Namen ein, um am Austausch teilzunehmen.</p>
+                    <form id="loginForm" class="chat-login-form" autocomplete="off">
+                        <input type="text" id="loginName" placeholder="Dein Name" maxlength="40" required>
+                        <input type="password" id="loginPassword" placeholder="Vereinspasswort" maxlength="40" required>
+                        <button type="submit">Anmelden &amp; Chatten</button>
+                        <div id="loginError" class="chat-login-error"></div>
+                    </form>
+                    <div class="chat-hint">Hinweis: Das Vereinspasswort lautet <strong>sfl1920</strong></div>
+                </div>
+
+                <!-- Chat Bereich (sichtbar nach Login) -->
+                <div id="chatArea" style="display: none; flex-direction: column; flex: 1;">
+                    <div class="chat-header">
+                        <div class="chat-header-title">
+                            <span>💬</span>
+                            <span>Vereinschat</span>
+                        </div>
+                        <div class="chat-status">
+                            <span class="online-dot"></span>
+                            <span class="chat-user-info">Angemeldet als <strong id="currentUserName">...</strong></span>
+                            <button id="logoutBtn" class="chat-logout">Abmelden</button>
+                        </div>
+                    </div>
+
+                    <div id="chatMessages" class="chat-messages">
+                        <div class="chat-empty">Noch keine Nachrichten. Schreib die erste!</div>
+                    </div>
+
+                    <form id="chatForm" class="chat-input-area" autocomplete="off">
+                        <textarea id="chatInput" class="chat-input" placeholder="Nachricht schreiben... (Enter zum Senden)" rows="1" maxlength="500"></textarea>
+                        <button type="submit" class="chat-send-btn" id="sendBtn">Senden</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ansprechpartner Section -->
+    <section class="contacts" id="contacts">
+        <h2>👥 Ansprechpartner</h2>
+        <p class="contacts-intro">Hier findest du die richtigen Kontakte rund um die Ulrichsheide.</p>
+        <div class="contacts-grid">           
+
+            <div class="contact-card">
+                <div class="contact-avatar">
+                    EM
+                    <img src="assets/EM.jpg" alt="Emanuel Massa" onerror="this.remove()">
+                </div>
+                <h3 class="contact-name">Emanuel Massa</h3>
+                <div class="contact-role">Jugendmannschaften, Training &amp; Platzbelegung</div>
+                <div class="contact-function">Funktion: Jugendleiter</div>
+                <div class="contact-details">
+                    <p>📧 <a href="mailto:jugend@sportfreunde-lauffen.de">jugendleitung@sportfreunde-lauffen.de</a></p>
+                    <p>📞 <a href="tel:+490000000000">+49 (0)</a></p>
+                </div>
+            </div>
+
+            <div class="contact-card">
+                <div class="contact-avatar">
+                    MM
+                    <img src="assets/contacts/marco-mayer.jpg" alt="Marco Mayer" onerror="this.remove()">
+                </div>
+                <h3 class="contact-name">Marco Mayer</h3>
+                <div class="contact-role">Aktive 1, Aktive 2</div>
+                <div class="contact-function">Funktion: Abteilungsleiter Aktive</div>
+                <div class="contact-details">
+                    <p>📧 <a href="mailto:aktive@sportfreunde-lauffen.de">aktive@sportfreunde-lauffen.de</a></p>
+                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
+                </div>
+            </div>
+
+            <div class="contact-card">
+                <div class="contact-avatar">
+                    MS
+                    <img src="assets/contacts/markus-schiefer.jpg" alt="Markus Schiefer" onerror="this.remove()">
+                </div>
+                <h3 class="contact-name">Markus Schiefer</h3>
+                <div class="contact-role">Wartung &amp; Pflege</div>
+                <div class="contact-function">Funktion: Platzwart/techn. Leiter</div>
+                <div class="contact-details">
+                    <p>📧 <a href="mailto:platzwart@sportfreunde-lauffen.de">platzwart@sportfreunde-lauffen.de</a></p>
+                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
+                </div>
+            </div>
+            <div class="contact-card">
+                <div class="contact-avatar">
+                    RH
+                    <img src="assets/contacts/rainer-himmelsbach.jpg" alt="Rainer Himmelsbach" onerror="this.remove()">
+                </div>
+                <h3 class="contact-name">Rainer Himmelsbach</h3>
+                <div class="contact-role">Alte Herren</div>
+                <div class="contact-function">Funktion: Abteilungsleiter AH</div>
+                <div class="contact-details">
+                    <p>📧 <a href="mailto:jugend@sportfreunde-lauffen.de">ah@sportfreunde-lauffen.de</a></p>
+                    <p>📞 <a href="tel:+490000000000">+49 (0)00000000</a></p>
+                </div>
+            </div>  
+            <div class="contact-card">
+                <div class="contact-avatar">
+                    LL
+                    <img src="assets/contacts/lukas-losch.jpg" alt="Lukas Losch" onerror="this.remove()">
+                </div>
+                <h3 class="contact-name">Lukas Losch</h3>
+                <div class="contact-role">Verein &amp; Allgemeines</div>
+                <div class="contact-function">Funktion: 1. Vorsitzender</div>
+                <div class="contact-details">
+                    <p>📧 <a href="mailto:vorstand@sportfreunde-lauffen.de">vorstand@sportfreunde-lauffen.de</a></p>
+                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Downloads Section -->
+    <section class="downloads" id="downloads">
+        <div class="downloads-content">
+            <h2>📂 Downloads</h2>
+            <p class="downloads-intro">Hier findest du wichtige Vereinsunterlagen und Formulare zum Herunterladen.</p>
+            <div class="downloads-grid">
+                <a href="assets/downloads/beitrittsformular.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">📝</div>
+                        <h3 class="download-title">Beitrittsformular</h3>
+                    </div>
+                    <p class="download-description">Formular für die Mitgliedschaft bei den Sportfreunden Lauffen.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
+
+                <a href="assets/downloads/vereinssatzung.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">📜</div>
+                        <h3 class="download-title">Vereinssatzung</h3>
+                    </div>
+                    <p class="download-description">Aktuelle Satzung des Vereins als PDF-Dokument.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
+
+                <a href="assets/downloads/platzordnung.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">📋</div>
+                        <h3 class="download-title">Platzordnung</h3>
+                    </div>
+                    <p class="download-description">Regeln und Hinweise zur Nutzung der Sportplätze Ulrichsheide.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
+
+                <a href="assets/downloads/trainingsplan.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">📅</div>
+                        <h3 class="download-title">Trainingsplan</h3>
+                    </div>
+                    <p class="download-description">Übersicht aller festen Trainingszeiten je Mannschaft.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
+
+                <a href="assets/downloads/spielplan.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">⚽</div>
+                        <h3 class="download-title">Spielplan</h3>
+                    </div>
+                    <p class="download-description">Aktueller Spielplan der Aktiven und Jugendmannschaften.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
+
+                <a href="assets/downloads/sepa-mandat.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">🏦</div>
+                        <h3 class="download-title">SEPA-Mandat</h3>
+                    </div>
+                    <p class="download-description">Formular zur Erteilung des SEPA-Lastschriftmandats.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="footer-content">
+            <h2 style="margin-bottom: 2rem;">⚽ Sportplatz Manager</h2>
+            <div class="footer-links">
+                <a href="#home">Home</a>
+                <a href="#features">Features</a>
+                <a href="#austausch">Austausch</a>
+                <a href="#contacts">Ansprechpartner</a>
+                <a href="#downloads">Downloads</a>
+                <a href="mailto:info@sportplatz-manager.de">Kontakt</a>
+                <a href="#privacy">Datenschutz</a>
+            </div>
+            <p>&copy; 2026 Sportplatz Manager. Alle Rechte vorbehalten.</p>
+            <p style="margin-top: 1rem; opacity: 0.7;">📧 info@sportplatz-manager.de | 📞 +49 (0)123 456789</p>
+        </div>
+    </footer>
+
+    <script src="pwa-register.js"></script>
+    <script>
+        // Smooth Scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // CTA Button Actions (nur binden, falls vorhanden)
+        const ctaBtn = document.querySelector('.btn-primary');
+        if (ctaBtn) {
+            ctaBtn.addEventListener('click', () => {
+                alert('🚀 App wird geöffnet...\nStarte: npm start im mobile Ordner');
+            });
+        }
+
+        // ============================
+        // Chat / Austausch Funktionalität
+        // ============================
+        (function() {
+            const CLUB_PASSWORD = 'sfl1920';
+            const STORAGE_MESSAGES = 'sfl_chat_messages';
+            const STORAGE_USER = 'sfl_chat_user';
+
+            const chatLogin = document.getElementById('chatLogin');
+            const chatArea = document.getElementById('chatArea');
+            const loginForm = document.getElementById('loginForm');
+            const loginName = document.getElementById('loginName');
+            const loginPassword = document.getElementById('loginPassword');
+            const loginError = document.getElementById('loginError');
+            const currentUserName = document.getElementById('currentUserName');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const chatMessages = document.getElementById('chatMessages');
+            const chatForm = document.getElementById('chatForm');
+            const chatInput = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+
+            let currentUser = null;
+
+            function loadMessages() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_MESSAGES);
+                    if (!raw) return [];
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    return [];
+                }
+            }
+
+            function saveMessages(messages) {
+                if (window.SFL) {
+                    window.SFL.save(STORAGE_MESSAGES, messages);
+                } else {
+                    localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(messages));
+                }
+            }
+
+            if (window.SFL) {
+                window.SFL.subscribe(STORAGE_MESSAGES, () => {
+                    if (currentUser) renderMessages();
+                });
+            }
+
+            function getInitials(name) {
+                return name.trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            }
+
+            function formatTime(timestamp) {
+                const d = new Date(timestamp);
+                const today = new Date();
+                const isToday = d.toDateString() === today.toDateString();
+                const time = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                if (isToday) return `Heute, ${time}`;
+                const date = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                return `${date}, ${time}`;
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function renderMessages() {
+                const messages = loadMessages();
+                if (messages.length === 0) {
+                    chatMessages.innerHTML = '<div class="chat-empty">Noch keine Nachrichten. Schreib die erste!</div>';
+                    return;
+                }
+                chatMessages.innerHTML = messages.map(msg => {
+                    const isOwn = currentUser && msg.user === currentUser;
+                    return `
+                        <div class="chat-message ${isOwn ? 'own' : ''}">
+                            <div class="chat-avatar">${escapeHtml(getInitials(msg.user))}</div>
+                            <div class="chat-bubble">
+                                <div class="chat-bubble-meta">
+                                    <span class="chat-bubble-name">${escapeHtml(msg.user)}</span>
+                                    <span class="chat-bubble-time">${formatTime(msg.timestamp)}</span>
+                                </div>
+                                <div class="chat-bubble-text">${escapeHtml(msg.text)}</div>
+                                ${isOwn ? `<button class="chat-delete" data-id="${msg.id}">Löschen</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                chatMessages.querySelectorAll('.chat-delete').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-id');
+                        if (confirm('Nachricht wirklich löschen?')) {
+                            const updated = loadMessages().filter(m => String(m.id) !== String(id));
+                            saveMessages(updated);
+                            renderMessages();
+                        }
+                    });
+                });
+            }
+
+            function showChat(user) {
+                currentUser = user;
+                currentUserName.textContent = user;
+                chatLogin.style.display = 'none';
+                chatArea.style.display = 'flex';
+                renderMessages();
+            }
+
+            function showLogin() {
+                currentUser = null;
+                chatArea.style.display = 'none';
+                chatLogin.style.display = 'block';
+                loginName.value = '';
+                loginPassword.value = '';
+                loginError.textContent = '';
+            }
+
+            const savedUser = localStorage.getItem(STORAGE_USER);
+            if (savedUser) {
+                showChat(savedUser);
+            }
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = loginName.value.trim();
+                const password = loginPassword.value;
+                if (!name) {
+                    loginError.textContent = 'Bitte gib deinen Namen ein.';
+                    return;
+                }
+                if (password !== CLUB_PASSWORD) {
+                    loginError.textContent = 'Falsches Vereinspasswort.';
+                    return;
+                }
+                localStorage.setItem(STORAGE_USER, name);
+                showChat(name);
+            });
+
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem(STORAGE_USER);
+                showLogin();
+            });
+
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const text = chatInput.value.trim();
+                if (!text || !currentUser) return;
+                const messages = loadMessages();
+                messages.push({
+                    id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+                    user: currentUser,
+                    text: text,
+                    timestamp: Date.now()
+                });
+                saveMessages(messages);
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                renderMessages();
+            });
+
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatForm.requestSubmit();
+                }
+            });
+
+            chatInput.addEventListener('input', () => {
+                chatInput.style.height = 'auto';
+                chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+            });
+
+            window.addEventListener('storage', (e) => {
+                if (e.key === STORAGE_MESSAGES && currentUser) {
+                    renderMessages();
+                }
+            });
+        })();
+
+    </script>
+</body>
+</html>
