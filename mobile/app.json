@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Sportplatz Manager",
+    "slug": "sportplatz-manager",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Die App benötigt Zugriff auf deine Fotos.",
+          "cameraPermission": "Die App benötigt Zugriff auf deine Kamera."
+        }
+      ]
+    ]
+  }
+}

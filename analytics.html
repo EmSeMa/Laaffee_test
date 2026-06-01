@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Analytics &amp; Berichte - Sportfreunde Lauffen</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-sync.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            background: white;
+            color: #000000;
+            border: none;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .back-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .filter-bar select {
+            padding: 0.45rem 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.95rem;
+        }
+
+        .filter-bar select:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .filter-bar .last-update {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #000;
+            color: white;
+            padding: 1.3rem 1.4rem;
+            border-radius: 10px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+        }
+
+        .stat-card.muted {
+            background: #f0f0f0;
+            color: #000;
+            border: 1px solid #e0e0e0;
+        }
+
+        .stat-card h3 {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card.muted h3 {
+            color: #555;
+            opacity: 1;
+        }
+
+        .stat-number {
+            font-size: 2.4rem;
+            font-weight: bold;
+            margin-bottom: 0.2rem;
+            line-height: 1;
+        }
+
+        .stat-meta {
+            font-size: 0.82rem;
+            opacity: 0.8;
+        }
+
+        .section-title {
+            color: #000;
+            margin: 2rem 0 1rem 0;
+            font-size: 1.3rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+
+        .chart-item {
+            background: #fafafa;
+            padding: 1.25rem;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .chart-item h3 {
+            color: #000;
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 50px;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.55rem;
+        }
+
+        .bar-row .bar-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .bar-row .bar-track {
+            background: #eaeaea;
+            border-radius: 4px;
+            height: 18px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bar-row .bar-fill {
+            height: 100%;
+            background: #000;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .bar-row .bar-count {
+            font-weight: bold;
+            text-align: right;
+            color: #000;
+            font-size: 0.9rem;
+        }
+
+        .empty-block {
+            text-align: center;
+            color: #999;
+            padding: 1rem;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+
+        .table-section {
+            margin-top: 2rem;
+        }
+
+        .table-section table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .table-section th {
+            background: #f0f0f0;
+            color: #000;
+            padding: 0.8rem 1rem;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+            font-size: 0.9rem;
+        }
+
+        .table-section td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.95rem;
+        }
+
+        .table-section tr:hover {
+            background: #fafafa;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .export-btn,
+        .reset-btn {
+            border: none;
+            padding: 0.7rem 1.4rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .export-btn {
+            background: #000;
+            color: white;
+        }
+
+        .export-btn:hover {
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .reset-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #e0e0e0;
+        }
+
+        .reset-btn:hover {
+            background: #e0e0e0;
+        }
+
+        @media (max-width: 900px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            .bar-row {
+                grid-template-columns: 100px 1fr 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">← Zurück</a>
+            <h1>📊 Analytics &amp; Berichte</h1>
+            <p>Live-Auswertung aller Sportplatz- und Bus-Buchungen</p>
+        </div>
+
+        <div class="content">
+            <div class="filter-bar">
+                <div>
+                    <label for="rangeSelect">Zeitraum:</label>
+                    <select id="rangeSelect">
+                        <option value="future">Zukünftige Termine</option>
+                        <option value="all" selected>Alle Buchungen</option>
+                        <option value="thisMonth">Diesen Monat</option>
+                        <option value="next30">Nächste 30 Tage</option>
+                        <option value="last30">Letzte 30 Tage</option>
+                    </select>
+                </div>
+                <span class="last-update" id="lastUpdate">—</span>
+            </div>
+
+            <div class="stats-grid" id="kpiGrid"></div>
+
+            <h2 class="section-title">📈 Auswertungen</h2>
+            <div class="charts-grid">
+                <div class="chart-item">
+                    <h3>Buchungen pro Sportplatz</h3>
+                    <div id="chartByField"></div>
+                </div>
+                <div class="chart-item">
+                    <h3>Buchungen pro Mannschaft</h3>
+                    <div id="chartByTeam"></div>
+                </div>
+                <div class="chart-item">
+                    <h3>Buchungen pro Wochentag</h3>
+                    <div id="chartByWeekday"></div>
+                </div>
+                <div class="chart-item">
+                    <h3>Bus-Buchungen pro Anlass</h3>
+                    <div id="chartByPurpose"></div>
+                </div>
+            </div>
+
+            <h2 class="section-title">🏆 Top Mannschaften</h2>
+            <div class="table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Mannschaft</th>
+                            <th>Sportplatz-Buchungen</th>
+                            <th>Bus-Buchungen</th>
+                            <th>Gesamt</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topTeamsTable">
+                        <tr><td colspan="5" class="empty-block">Lade Daten …</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 class="section-title">🧑‍🤝‍🧑 Trainer &amp; Verantwortliche</h2>
+            <div class="table-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Anzahl</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <tr><td colspan="2" class="empty-block">Lade Daten …</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="actions">
+                <button class="export-btn" id="exportBtn">📥 CSV exportieren</button>
+                <button class="reset-btn" id="reloadBtn">🔄 Daten neu laden</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const KEYS = {
+            sport: 'sportplatzBookings',
+            bus: 'busBookings',
+            users: 'youthCoaches'
+        };
+
+        const rangeSelect = document.getElementById('rangeSelect');
+        const lastUpdate = document.getElementById('lastUpdate');
+        const kpiGrid = document.getElementById('kpiGrid');
+        const chartByField = document.getElementById('chartByField');
+        const chartByTeam = document.getElementById('chartByTeam');
+        const chartByWeekday = document.getElementById('chartByWeekday');
+        const chartByPurpose = document.getElementById('chartByPurpose');
+        const topTeamsTable = document.getElementById('topTeamsTable');
+        const usersTable = document.getElementById('usersTable');
+        const exportBtn = document.getElementById('exportBtn');
+        const reloadBtn = document.getElementById('reloadBtn');
+
+        function load(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return [];
+                const data = JSON.parse(raw);
+                return Array.isArray(data) ? data : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function parseDate(dateStr) {
+            if (!dateStr) return null;
+            const date = new Date(dateStr);
+            return isNaN(date) ? null : date;
+        }
+
+        function filterByRange(list, range) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            return list.filter(item => {
+                const date = parseDate(item.date);
+                if (!date) return true;
+
+                if (range === 'future') {
+                    return date >= today;
+                }
+                if (range === 'thisMonth') {
+                    return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth();
+                }
+                if (range === 'next30') {
+                    const limit = new Date(today);
+                    limit.setDate(limit.getDate() + 30);
+                    return date >= today && date <= limit;
+                }
+                if (range === 'last30') {
+                    const start = new Date(today);
+                    start.setDate(start.getDate() - 30);
+                    return date >= start && date <= today;
+                }
+                return true;
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[ch]));
+        }
+
+        function groupCount(list, keyFn) {
+            const map = new Map();
+            list.forEach(item => {
+                const key = keyFn(item);
+                if (!key) return;
+                map.set(key, (map.get(key) || 0) + 1);
+            });
+            return [...map.entries()].sort((a, b) => b[1] - a[1]);
+        }
+
+        function renderBars(container, entries, valueLabel = '') {
+            if (!entries.length) {
+                container.innerHTML = '<div class="empty-block">Keine Daten vorhanden</div>';
+                return;
+            }
+
+            const max = Math.max(...entries.map(([, v]) => v));
+            const html = entries.map(([label, value]) => {
+                const widthPercent = max ? Math.max(4, Math.round((value / max) * 100)) : 0;
+                return `
+                    <div class="bar-row">
+                        <div class="bar-label">${escapeHtml(label)}</div>
+                        <div class="bar-track"><div class="bar-fill" style="width:${widthPercent}%"></div></div>
+                        <div class="bar-count">${escapeHtml(value)}${valueLabel}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function getWeekdayKey(item) {
+            const date = parseDate(item.date);
+            if (!date) return null;
+            const names = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+            return names[date.getDay()];
+        }
+
+        function getFieldKey(item) {
+            return item.field || 'Unbekannt';
+        }
+
+        function getTeamKey(item) {
+            return item.team || 'Unbekannt';
+        }
+
+        function renderKpis(sport, bus, users) {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const upcomingSport = sport.filter(b => b.date >= todayStr).length;
+            const upcomingBus = bus.filter(b => b.date >= todayStr).length;
+            const activeUsers = users.filter(u => u.status === 'active').length;
+            const admins = users.filter(u => u.role === 'Admin').length;
+
+            const cards = [
+                { label: 'Sportplatz-Buchungen', value: sport.length, meta: `Zukünftig: ${upcomingSport}` },
+                { label: 'Bus-Buchungen', value: bus.length, meta: `Zukünftig: ${upcomingBus}` },
+                { label: 'Aktive Trainer', value: activeUsers, meta: `Admins: ${admins}` },
+                { label: 'Insgesamt', value: sport.length + bus.length, meta: `Sport + Bus`, muted: true }
+            ];
+
+            kpiGrid.innerHTML = cards.map(card => `
+                <div class="stat-card ${card.muted ? 'muted' : ''}">
+                    <h3>${card.label}</h3>
+                    <div class="stat-number">${card.value}</div>
+                    <div class="stat-meta">${card.meta}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderTopTeams(sport, bus) {
+            const map = new Map();
+            const add = (team, kind) => {
+                if (!team) return;
+                if (!map.has(team)) map.set(team, { sport: 0, bus: 0 });
+                map.get(team)[kind]++;
+            };
+
+            sport.forEach(b => add(b.team, 'sport'));
+            bus.forEach(b => add(b.team, 'bus'));
+
+            const rows = [...map.entries()]
+                .map(([team, counts]) => ({ team, ...counts, total: counts.sport + counts.bus }))
+                .sort((a, b) => b.total - a.total)
+                .slice(0, 10);
+
+            if (rows.length === 0) {
+                topTeamsTable.innerHTML = '<tr><td colspan="5" class="empty-block">Keine Buchungen vorhanden</td></tr>';
+                return;
+            }
+
+            topTeamsTable.innerHTML = rows.map((row, idx) => `
+                <tr>
+                    <td><strong>${idx + 1}</strong></td>
+                    <td>${escapeHtml(row.team)}</td>
+                    <td>${row.sport}</td>
+                    <td>${row.bus}</td>
+                    <td><strong>${row.total}</strong></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderUsersTable(users) {
+            const active = users.filter(u => u.status === 'active').length;
+            const inactive = users.filter(u => u.status === 'inactive').length;
+            const admins = users.filter(u => u.role === 'Admin').length;
+            const trainers = users.filter(u => u.role === 'Trainer' || u.role === 'Co-Trainer').length;
+            const leaders = users.filter(u => u.role === 'Jugendleiter' || u.role === 'Abteilungsleiter').length;
+
+            const rows = [
+                ['Aktive Benutzer', active],
+                ['Inaktive Benutzer', inactive],
+                ['Trainer / Co-Trainer', trainers],
+                ['Jugend-/Abteilungsleiter', leaders],
+                ['Administratoren', admins]
+            ];
+
+            usersTable.innerHTML = rows.map(([label, value]) => `
+                <tr>
+                    <td>${escapeHtml(label)}</td>
+                    <td><strong>${value}</strong></td>
+                </tr>
+            `).join('');
+        }
+
+        function refresh() {
+            const range = rangeSelect.value;
+            const sport = filterByRange(load(KEYS.sport), range);
+            const bus = filterByRange(load(KEYS.bus), range);
+            const users = load(KEYS.users);
+
+            renderKpis(sport, bus, users);
+
+            renderBars(chartByField, groupCount(sport, getFieldKey));
+            renderBars(chartByTeam, groupCount([...sport, ...bus], getTeamKey));
+            renderBars(chartByWeekday, groupCount([...sport, ...bus], getWeekdayKey));
+            renderBars(chartByPurpose, groupCount(bus, b => b.purpose || 'Sonstiges'));
+
+            renderTopTeams(sport, bus);
+            renderUsersTable(users);
+
+            lastUpdate.textContent = 'Aktualisiert: ' + new Date().toLocaleString('de-DE');
+        }
+
+        function csvEscape(value) {
+            const str = String(value ?? '');
+            if (/[",\n;]/.test(str)) {
+                return '"' + str.replace(/"/g, '""') + '"';
+            }
+            return str;
+        }
+
+        function exportCsv() {
+            const sport = load(KEYS.sport);
+            const bus = load(KEYS.bus);
+
+            const rows = [];
+            rows.push(['Typ', 'Datum', 'Mannschaft', 'Platz/Ziel', 'Startzeit', 'Endzeit', 'Status']);
+
+            sport.forEach(b => {
+                rows.push([
+                    'Sportplatz',
+                    b.date || '',
+                    b.team || '',
+                    b.field || '',
+                    b.startTime || '',
+                    b.endTime || '',
+                    b.isFixedSeries ? 'Serie' : 'Manuell'
+                ]);
+            });
+
+            bus.forEach(b => {
+                rows.push([
+                    'Bus',
+                    b.date || '',
+                    b.team || '',
+                    `${b.purpose || ''}${b.destination ? ' - ' + b.destination : ''}`,
+                    b.startTime || '',
+                    b.endTime || '',
+                    b.status || 'pending'
+                ]);
+            });
+
+            const csv = rows.map(row => row.map(csvEscape).join(';')).join('\r\n');
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `sportfreunde-lauffen-buchungen_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        rangeSelect.addEventListener('change', refresh);
+        reloadBtn.addEventListener('click', refresh);
+        exportBtn.addEventListener('click', exportCsv);
+
+        refresh();
+    </script>
+    <script src="pwa-register.js"></script>
+</body>
+</html>

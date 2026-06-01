@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Wartungsplanung - Sportplatz Manager</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-sync.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 2rem;
+        }
+        .back-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .content {
+            padding: 2rem;
+        }
+        .task-item {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-left: 4px solid #667eea;
+            margin-bottom: 1.5rem;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-info h3 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        .task-info p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0.25rem 0;
+        }
+        .priority {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        .priority.high {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .priority.medium {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .priority.low {
+            background: #e8f5e9;
+            color: #1b5e20;
+        }
+        .action-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Wartungsplanung</h1>
+            <button class="back-btn" onclick="history.back()">← Zurück</button>
+        </div>
+
+        <div class="content">
+            <h2 style="margin-bottom: 1.5rem; color: #667eea;">Anstehende Wartungsaufgaben</h2>
+            
+            <div class="task-item">
+                <div class="task-info">
+                    <h3>Hauptplatz - Rasen mähen</h3>
+                    <p>📅 29.05.2026 - 08:00 Uhr</p>
+                    <p>👤 Zugewiesen: Max Müller</p>
+                    <span class="priority high">HOHE PRIORITÄT</span>
+                </div>
+                <button class="action-btn">Bearbeiten</button>
+            </div>
+
+            <div class="task-item">
+                <div class="task-info">
+                    <h3>Tennisplatz 1 - Netzprüfung</h3>
+                    <p>📅 31.05.2026 - 10:00 Uhr</p>
+                    <p>👤 Zugewiesen: Anna Schmidt</p>
+                    <span class="priority medium">MITTLERE PRIORITÄT</span>
+                </div>
+                <button class="action-btn">Bearbeiten</button>
+            </div>
+
+            <div class="task-item">
+                <div class="task-info">
+                    <h3>Basketballplatz - Markierungen ausbessern</h3>
+                    <p>📅 02.06.2026 - 14:00 Uhr</p>
+                    <p>👤 Zugewiesen: Thomas Becker</p>
+                    <span class="priority low">NIEDRIGE PRIORITÄT</span>
+                </div>
+                <button class="action-btn">Bearbeiten</button>
+            </div>
+
+            <div class="task-item">
+                <div class="task-info">
+                    <h3>Trainingsplatz - Bewässerungsprüfung</h3>
+                    <p>📅 01.06.2026 - 09:00 Uhr</p>
+                    <p>👤 Zugewiesen: Petra Keller</p>
+                    <span class="priority high">HOHE PRIORITÄT</span>
+                </div>
+                <button class="action-btn">Bearbeiten</button>
+            </div>
+
+            <button style="background: #667eea; color: white; border: none; padding: 0.8rem 2rem; border-radius: 5px; cursor: pointer; font-size: 1rem; margin-top: 2rem;" onclick="alert('Neue Aufgabe erstellen...')">+ Neue Aufgabe</button>
+        </div>
+    </div>
+    <script src="pwa-register.js"></script>
+</body>
+</html>

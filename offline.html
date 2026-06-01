@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - SFL Manager</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#000000">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #000 0%, #333 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+        }
+        .offline-card {
+            max-width: 480px;
+        }
+        .offline-icon { font-size: 5rem; margin-bottom: 1rem; }
+        h1 { font-size: 2rem; margin-bottom: 1rem; }
+        p { opacity: 0.9; margin-bottom: 1.5rem; line-height: 1.6; }
+        button {
+            background: white;
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.6rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <div class="offline-card">
+        <div class="offline-icon">📡</div>
+        <h1>Keine Verbindung</h1>
+        <p>Du bist gerade offline. Manche Inhalte sind nur mit Internet verfügbar. Buchungen und Daten, die schon geladen wurden, funktionieren weiterhin.</p>
+        <button onclick="location.reload()">🔄 Erneut versuchen</button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Feldverwaltung - Sportplatz Manager</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-sync.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1f3a25;
+            background-image:
+                linear-gradient(135deg, rgba(15, 30, 18, 0.55) 0%, rgba(45, 75, 50, 0.55) 100%),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 255, 255, 0.04) 0px,
+                    rgba(255, 255, 255, 0.04) 40px,
+                    rgba(0, 0, 0, 0.04) 40px,
+                    rgba(0, 0, 0, 0.04) 80px
+                ),
+                url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 520' preserveAspectRatio='xMidYMid slice'><g fill='none' stroke='%23ffffff' stroke-width='3' stroke-opacity='0.7'><rect x='30' y='30' width='740' height='460'/><line x1='400' y1='30' x2='400' y2='490'/><circle cx='400' cy='260' r='70'/><circle cx='400' cy='260' r='3' fill='%23ffffff' stroke='none'/><rect x='30' y='130' width='130' height='260'/><rect x='30' y='190' width='55' height='140'/><rect x='640' y='130' width='130' height='260'/><rect x='715' y='190' width='55' height='140'/><circle cx='150' cy='260' r='3' fill='%23ffffff' stroke='none'/><circle cx='650' cy='260' r='3' fill='%23ffffff' stroke='none'/><path d='M 160 200 A 70 70 0 0 1 160 320'/><path d='M 640 200 A 70 70 0 0 0 640 320'/><rect x='15' y='235' width='15' height='50'/><rect x='770' y='235' width='15' height='50'/><path d='M 30 30 Q 50 30 50 50'/><path d='M 770 30 Q 750 30 750 50'/><path d='M 30 490 Q 50 490 50 470'/><path d='M 770 490 Q 750 490 750 470'/></g></svg>");
+            background-position: center center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            font-size: 2rem;
+        }
+        .back-btn {
+            background: white;
+            color: #000000;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .content {
+            padding: 2rem;
+        }
+        .fields-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .field-card {
+            background: #f9f9f9;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s;
+        }
+        .field-card:hover {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: translateY(-5px);
+            border-color: #000000;
+        }
+        .field-card h3 {
+            color: #000000;
+            margin-bottom: 0.5rem;
+        }
+        .field-card p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0.5rem 0;
+        }
+        .field-info {
+            background: #f0f4ff;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        .status.available {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status.booked {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .action-btn {
+            background: #000000;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            width: 100%;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+        .action-btn:hover {
+            background: #333333;
+        }
+        .training-overview {
+            margin-top: 2.5rem;
+            background: #f9f9f9;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.25rem;
+        }
+        .training-overview h2 {
+            color: #000000;
+            margin-bottom: 1rem;
+        }
+        .overview-subtitle {
+            color: #000000;
+            margin: 0.75rem 0 0.6rem 0;
+            font-size: 1rem;
+        }
+        .overview-list {
+            padding-right: 0;
+        }
+        .overview-empty {
+            color: #888;
+            font-style: italic;
+            padding: 0.5rem 0;
+        }
+        .overview-day {
+            margin-bottom: 1rem;
+        }
+        .overview-day-title {
+            color: #444;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid #e3e3e3;
+            padding-bottom: 0.3rem;
+        }
+        .overview-item {
+            background: white;
+            border-left: 4px solid #000000;
+            border-radius: 6px;
+            padding: 0.65rem 0.75rem;
+            margin-bottom: 0.5rem;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .overview-item strong {
+            color: #000000;
+        }
+        .overview-item-title {
+            color: #000000;
+            font-weight: 700;
+            margin: 0;
+            font-size: 1rem;
+        }
+        .overview-item p {
+            color: #555;
+            margin: 0.2rem 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        .field-card.custom {
+            border-color: #000;
+        }
+
+        .field-card .field-badge {
+            display: inline-block;
+            background: #000;
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+
+        .field-card .remove-field-btn {
+            background: #c62828;
+            color: white;
+            border: none;
+            padding: 0.45rem 0.9rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .field-card .remove-field-btn:hover {
+            background: #a01a1a;
+        }
+
+        .add-field-btn {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 2rem;
+            transition: all 0.3s;
+        }
+
+        .add-field-btn:hover {
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .add-field-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dialog-overlay.active {
+            display: flex;
+        }
+
+        .dialog {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .dialog h3 {
+            color: #000;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .dialog-form label {
+            display: block;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.3rem;
+            margin-top: 0.8rem;
+        }
+
+        .dialog-form input,
+        .dialog-form select,
+        .dialog-form textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .dialog-form input:focus,
+        .dialog-form select:focus,
+        .dialog-form textarea:focus {
+            outline: none;
+            border-color: #000;
+        }
+
+        .dialog-form textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .dialog-buttons button {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm {
+            background: #000;
+            color: white;
+        }
+
+        .btn-confirm:hover {
+            background: #333;
+        }
+
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .admin-note {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚽ Feldverwaltung</h1>
+            <button class="back-btn" onclick="history.back()">← Zurück</button>
+        </div>
+
+        <div class="content">
+            <h2 style="margin-bottom: 1.5rem; color: #000000;">Verfügbare Sportplätze</h2>
+
+            <div class="fields-grid" id="fieldsGrid"></div>
+
+            <button class="add-field-btn" id="addFieldBtn">+ Neuen Platz hinzufügen</button>
+            <div class="admin-note" id="adminNote">Nur Administratoren können neue Plätze anlegen.</div>
+
+            <div class="training-overview">
+                <h2>📅 Übersicht der Trainingszeiten</h2>
+                <h3 class="overview-subtitle">Feste Trainingszeiten der Mannschaften</h3>
+                <div id="fixedTrainingList" class="overview-list"></div>
+                <h3 class="overview-subtitle">Gebuchte Trainingszeiten</h3>
+                <div id="trainingOverviewList" class="overview-list">
+                    <div class="overview-empty">Keine Trainingszeiten vorhanden.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dialog: Neuen Platz anlegen -->
+    <div class="dialog-overlay" id="fieldDialog">
+        <div class="dialog">
+            <h3>➕ Neuen Sportplatz anlegen</h3>
+            <div class="dialog-form">
+                <label for="newFieldName">Bezeichnung: <span style="color:#c62828;">*</span></label>
+                <input type="text" id="newFieldName" placeholder="z.B. Kunstrasenplatz Meimsheim">
+
+                <label for="newFieldType">Typ:</label>
+                <select id="newFieldType">
+                    <option value="Trainingsplatz">Trainingsplatz</option>
+                    <option value="Stadion">Stadion</option>
+                    <option value="Kunstrasenplatz">Kunstrasenplatz</option>
+                    <option value="Halle">Halle</option>
+                    <option value="Sonstiges">Sonstiges</option>
+                </select>
+
+                <label for="newFieldLocation">Standort / Ort:</label>
+                <input type="text" id="newFieldLocation" placeholder="z.B. Lauffen, Meimsheim">
+
+                <label for="newFieldDescription">Kurzbeschreibung:</label>
+                <input type="text" id="newFieldDescription" placeholder="z.B. Fußball - Training">
+
+                <label for="newFieldNotes">Hinweise (optional):</label>
+                <textarea id="newFieldNotes" rows="2" placeholder="z.B. nur im Sommer nutzbar"></textarea>
+            </div>
+
+            <div class="dialog-buttons">
+                <button class="btn-cancel" id="fieldCancelBtn">Abbrechen</button>
+                <button class="btn-confirm" id="fieldConfirmBtn">Platz anlegen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const USERS_STORAGE_KEY = 'youthCoaches';
+        const SESSION_KEY = 'currentUserId';
+        const CUSTOM_FIELDS_KEY = 'customSportFields';
+
+        const DEFAULT_FIELDS = [
+            { id: 'default-1', label: 'Stadion - Platz 1', description: 'Fußball - Standard', custom: false },
+            { id: 'default-2', label: 'Trainingsplatz - Platz 2', description: 'Fußball - Training', custom: false },
+            { id: 'default-3', label: 'Trainingsplatz - Platz 3', description: 'Fußball - Training', custom: false }
+        ];
+
+        function getCurrentUser() {
+            try {
+                const id = sessionStorage.getItem(SESSION_KEY);
+                if (!id) return null;
+                const stored = localStorage.getItem(USERS_STORAGE_KEY);
+                if (!stored) return null;
+                const list = JSON.parse(stored);
+                if (!Array.isArray(list)) return null;
+                return list.find(u => String(u.id) === String(id) && u.status === 'active') || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function isAdmin() {
+            const user = getCurrentUser();
+            return !!(user && user.role === 'Admin');
+        }
+
+        function getCustomFields() {
+            try {
+                const stored = localStorage.getItem(CUSTOM_FIELDS_KEY);
+                if (!stored) return [];
+                const list = JSON.parse(stored);
+                return Array.isArray(list) ? list : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveCustomFields(list) {
+            if (window.SFL) {
+                window.SFL.save(CUSTOM_FIELDS_KEY, list);
+            } else {
+                localStorage.setItem(CUSTOM_FIELDS_KEY, JSON.stringify(list));
+            }
+        }
+
+        if (window.SFL) {
+            window.SFL.subscribe(CUSTOM_FIELDS_KEY, () => {
+                if (typeof renderFields === 'function') renderFields();
+            });
+            window.SFL.subscribe('sportplatzBookings', () => {
+                if (typeof renderTrainingOverview === 'function') renderTrainingOverview();
+            });
+            window.SFL.subscribe('youthCoaches', () => {
+                if (typeof renderFields === 'function') renderFields();
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[ch]));
+        }
+
+        function renderFields() {
+            const grid = document.getElementById('fieldsGrid');
+            if (!grid) return;
+
+            const customFields = getCustomFields();
+            const allFields = [...DEFAULT_FIELDS, ...customFields];
+            const admin = isAdmin();
+
+            grid.innerHTML = allFields.map(field => {
+                const badge = field.custom ? '<span class="field-badge">Neu</span>' : '';
+                const description = field.description || (field.type ? field.type : 'Sportplatz');
+                const locationText = field.location ? `<p>📍 ${escapeHtml(field.location)}</p>` : '';
+                const notesText = field.notes ? `<p style="font-style:italic; color:#888;">${escapeHtml(field.notes)}</p>` : '';
+                const removeBtn = (field.custom && admin)
+                    ? `<button class="remove-field-btn" onclick="deleteCustomField('${field.id}')">Platz entfernen</button>`
+                    : '';
+
+                return `
+                    <div class="field-card${field.custom ? ' custom' : ''}">
+                        <h3>⚽ ${escapeHtml(field.label)}${badge}</h3>
+                        <p>${escapeHtml(description)}</p>
+                        ${locationText}
+                        ${notesText}
+                        <button class="action-btn">Details ansehen</button>
+                        ${removeBtn}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function refreshAddButton() {
+            const btn = document.getElementById('addFieldBtn');
+            const note = document.getElementById('adminNote');
+            if (!btn) return;
+            const admin = isAdmin();
+            btn.disabled = !admin;
+            if (note) note.style.display = admin ? 'none' : 'block';
+        }
+
+        function openFieldDialog() {
+            if (!isAdmin()) {
+                alert('Nur Administratoren können neue Plätze anlegen.\nBitte melde dich auf der Benutzerverwaltung als Admin an.');
+                return;
+            }
+            const dialog = document.getElementById('fieldDialog');
+            document.getElementById('newFieldName').value = '';
+            document.getElementById('newFieldType').value = 'Trainingsplatz';
+            document.getElementById('newFieldLocation').value = '';
+            document.getElementById('newFieldDescription').value = '';
+            document.getElementById('newFieldNotes').value = '';
+            dialog.classList.add('active');
+            setTimeout(() => document.getElementById('newFieldName').focus(), 50);
+        }
+
+        function closeFieldDialog() {
+            document.getElementById('fieldDialog').classList.remove('active');
+        }
+
+        function saveNewField() {
+            if (!isAdmin()) {
+                alert('Nur Administratoren können neue Plätze anlegen.');
+                return;
+            }
+            const name = document.getElementById('newFieldName').value.trim();
+            const type = document.getElementById('newFieldType').value;
+            const location = document.getElementById('newFieldLocation').value.trim();
+            const description = document.getElementById('newFieldDescription').value.trim();
+            const notes = document.getElementById('newFieldNotes').value.trim();
+
+            if (!name) {
+                alert('Bitte eine Bezeichnung für den Platz eintragen.');
+                document.getElementById('newFieldName').focus();
+                return;
+            }
+
+            const label = location ? `${name} (${location})` : name;
+            const customList = getCustomFields();
+            const existsDefault = DEFAULT_FIELDS.some(f => f.label.toLowerCase() === label.toLowerCase());
+            const existsCustom = customList.some(f => f.label.toLowerCase() === label.toLowerCase());
+
+            if (existsDefault || existsCustom) {
+                alert('Ein Platz mit dieser Bezeichnung existiert bereits.');
+                return;
+            }
+
+            customList.push({
+                id: 'custom-' + Date.now(),
+                label: label,
+                name: name,
+                type: type,
+                location: location,
+                description: description || type,
+                notes: notes,
+                custom: true
+            });
+            saveCustomFields(customList);
+            renderFields();
+            closeFieldDialog();
+        }
+
+        function deleteCustomField(fieldId) {
+            if (!isAdmin()) return;
+            const customList = getCustomFields();
+            const field = customList.find(f => f.id === fieldId);
+            if (!field) return;
+            if (!confirm('Platz "' + field.label + '" wirklich entfernen?')) return;
+            const updated = customList.filter(f => f.id !== fieldId);
+            saveCustomFields(updated);
+            renderFields();
+        }
+
+        document.getElementById('addFieldBtn').addEventListener('click', openFieldDialog);
+        document.getElementById('fieldCancelBtn').addEventListener('click', closeFieldDialog);
+        document.getElementById('fieldConfirmBtn').addEventListener('click', saveNewField);
+        document.getElementById('fieldDialog').addEventListener('click', (e) => {
+            if (e.target.id === 'fieldDialog') closeFieldDialog();
+        });
+
+        const FIXED_YOUTH_TRAININGS = [
+            { team: 'Bambini', day: 'Freitag', startTime: '17:00', endTime: '18:00', field: 'Platz 1' },
+            { team: 'F-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 1' },
+            { team: 'E-Jugend', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 2' },
+            { team: 'E-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 2' },
+            { team: 'D-Jugend', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
+            { team: 'D-Jugend', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
+            { team: 'C-Jugend', day: 'Montag', startTime: '18:00', endTime: '19:30', field: 'Platz 2' },
+            { team: 'C-Jugend', day: 'Donnerstag', startTime: '17:00', endTime: '18:30', field: 'Platz 3' },
+            { team: 'B-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },
+            { team: 'B-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim' },
+            { team: 'A-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },
+            { team: 'A-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim' },
+            { team: 'Aktive 1', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
+            { team: 'Aktive 1', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
+            { team: 'Aktive 2', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
+            { team: 'Aktive 2', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
+            { team: 'AH', day: 'Freitag', startTime: '18', endTime: '19:30', field: 'Platz 1' }
+        ];
+
+        function formatOverviewDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('de-DE', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function renderFixedTrainings() {
+            const container = document.getElementById('fixedTrainingList');
+
+            if (!FIXED_YOUTH_TRAININGS.length) {
+                container.innerHTML = '<div class="overview-empty">Keine festen Trainingszeiten hinterlegt.</div>';
+                return;
+            }
+
+            const groupedByTeam = FIXED_YOUTH_TRAININGS.reduce((acc, entry) => {
+                if (!acc[entry.team]) {
+                    acc[entry.team] = [];
+                }
+                acc[entry.team].push(entry);
+                return acc;
+            }, {});
+
+            let html = '';
+            Object.keys(groupedByTeam).forEach((team) => {
+                html += `
+                    <div class="overview-item">
+                        <h4 class="overview-item-title">${team}</h4>
+                `;
+
+                groupedByTeam[team].forEach((entry) => {
+                    html += `<p>${entry.day}, ${entry.startTime} - ${entry.endTime} Uhr | ${entry.field || 'Platz nicht gesetzt'}</p>`;
+                });
+
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderTrainingOverview() {
+            const container = document.getElementById('trainingOverviewList');
+            const savedBookings = JSON.parse(localStorage.getItem('sportplatzBookings') || '[]');
+
+            if (!savedBookings.length) {
+                container.innerHTML = '<div class="overview-empty">Keine Trainingszeiten vorhanden.</div>';
+                return;
+            }
+
+            const sorted = [...savedBookings].sort((a, b) => {
+                const dateCompare = new Date(a.date) - new Date(b.date);
+                if (dateCompare !== 0) return dateCompare;
+                return (a.startTime || '').localeCompare(b.startTime || '');
+            });
+
+            const grouped = sorted.reduce((acc, booking) => {
+                if (!acc[booking.date]) {
+                    acc[booking.date] = [];
+                }
+                acc[booking.date].push(booking);
+                return acc;
+            }, {});
+
+            let html = '';
+
+            Object.keys(grouped).forEach((dateKey) => {
+                html += `
+                    <div class="overview-day">
+                        <h3 class="overview-day-title">${formatOverviewDate(dateKey)}</h3>
+                `;
+
+                grouped[dateKey].forEach((booking) => {
+                    html += `
+                        <div class="overview-item">
+                            <strong>${booking.startTime} - ${booking.endTime}</strong>
+                            <p>${booking.field} | Mannschaft: ${booking.team || 'Keine Angabe'}</p>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        renderFields();
+        refreshAddButton();
+        renderFixedTrainings();
+        renderTrainingOverview();
+    </script>
+    <script src="pwa-register.js"></script>
+</body>
+</html>
