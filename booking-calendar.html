@@ -1903,9 +1903,10 @@
                         // Sichtbarkeit Löschen-Button:
                         // - Nicht eingeloggt: kein Löschen
                         // - Admin: alle Löschen-Buttons
-                        // - Trainer: nur eigene Mannschaft, keine Serien
+                        // - Trainer: nur Buchungen der eigenen Mannschaft (auch Serien)
+                        const canDelete = !!currentUser && (isAdmin || (booking.team && booking.team === userTeam));
                         if (booking.isFixedSeries) {
-                            if (isAdmin) {
+                            if (canDelete) {
                                 actionElement = `
                                     <span style="display:inline-flex; gap:0.4rem; align-items:center;">
                                         <span class="booking-fixed-badge">Serie</span>
@@ -1916,7 +1917,6 @@
                                 actionElement = '<span class="booking-fixed-badge">Serie</span>';
                             }
                         } else {
-                            const canDelete = isAdmin || (currentUser && booking.team && booking.team === userTeam);
                             if (canDelete) {
                                 actionElement = `<button class="booking-delete" onclick="deleteBooking('${booking.id}', false)">Löschen</button>`;
                             } else {
@@ -1964,8 +1964,13 @@
             const isAdmin = currentUser.role === 'Admin';
 
             if (isFixedSeries) {
-                if (!isAdmin) {
-                    alert('Serien-Termine können nur von Administratoren gelöscht werden.');
+                const seriesBooking = fixedSeriesBookings.find(b => String(b.id) === String(id));
+                if (!seriesBooking) {
+                    alert('Serien-Termin nicht gefunden.');
+                    return;
+                }
+                if (!isAdmin && seriesBooking.team !== currentUser.team) {
+                    alert('Du kannst nur Serien-Termine deiner eigenen Mannschaft löschen.');
                     return;
                 }
                 if (!confirm('Diesen Serien-Termin wirklich entfernen?\n(Nur dieser einzelne Termin wird gelöscht.)')) {
