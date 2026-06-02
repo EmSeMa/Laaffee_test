@@ -1,18 +1,8 @@
 // ============================================================
 // Firebase Sync Layer für SFL Manager
 // Synchronisiert ausgewählte localStorage-Keys mit Firebase
-// Realtime Database. Funktioniert weiterhin offline.
+// Realtime Database. Startet erst nach erfolgreichem Login.
 // ============================================================
-
-const firebaseConfig = {
-    apiKey: "AIzaSyBqijRXyIrcs9jnwonTDAiqZS6U6hbEXKk",
-    authDomain: "sfl-manager.firebaseapp.com",
-    databaseURL: "https://sfl-manager-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "sfl-manager",
-    storageBucket: "sfl-manager.firebasestorage.app",
-    messagingSenderId: "263682515445",
-    appId: "1:263682515445:web:f40b6c54a9f5caf78f00bc"
-};
 
 // Welche localStorage-Keys sollen mit Firebase synchronisiert werden?
 const SYNCED_KEYS = {
@@ -30,6 +20,7 @@ const SFL = {
     listeners: {},
     lastEmitted: {},
     snapshotReceived: {},
+    _attachedRefs: [],
 
     init() {
         try {
@@ -37,22 +28,64 @@ const SFL = {
                 console.warn('[SFL] Firebase SDK nicht geladen - Offline-Modus');
                 return;
             }
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
+            const config = window.SFL_FIREBASE_CONFIG;
+            if (!config) {
+                console.warn('[SFL] firebase-config.js fehlt - Offline-Modus');
+                return;
             }
-            this.db = firebase.database();
-            this.ready = true;
-            console.log('[SFL] Firebase bereit');
-            this.attachAllListeners();
+            if (!firebase.apps.length) {
+                firebase.initializeApp(config);
+            }
+
+            if (typeof firebase.auth !== 'function') {
+                console.warn('[SFL] Firebase Auth SDK nicht geladen - direkter Start');
+                this._enableDB();
+                return;
+            }
+
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    this._enableDB();
+                } else {
+                    this._disableDB();
+                }
+            });
         } catch (err) {
             console.error('[SFL] Firebase Init Fehler:', err);
         }
     },
 
+    _enableDB() {
+        if (this.ready) return;
+        try {
+            this.db = firebase.database();
+            this.ready = true;
+            console.log('[SFL] Firebase bereit (auth ok)');
+            this.attachAllListeners();
+        } catch (err) {
+            console.error('[SFL] DB Start Fehler:', err);
+        }
+    },
+
+    _disableDB() {
+        if (!this.ready) return;
+        try {
+            this._attachedRefs.forEach((ref) => {
+                try { ref.off(); } catch (e) {}
+            });
+        } catch (e) {}
+        this._attachedRefs = [];
+        this.ready = false;
+        this.db = null;
+        console.log('[SFL] Auth weg - Sync gestoppt');
+    },
+
     attachAllListeners() {
         Object.keys(SYNCED_KEYS).forEach((localKey) => {
             const remotePath = SYNCED_KEYS[localKey];
-            this.db.ref(remotePath).on('value', (snapshot) => {
+            const ref = this.db.ref(remotePath);
+            this._attachedRefs.push(ref);
+            ref.on('value', (snapshot) => {
                 const remoteData = snapshot.val();
                 this.snapshotReceived[localKey] = true;
 
@@ -65,7 +98,7 @@ const SFL = {
                     try { localParsed = localRaw ? JSON.parse(localRaw) : null; } catch (e) {}
                     if (Array.isArray(localParsed) && localParsed.length > 0) {
                         console.log('[SFL]', localKey, '- DB leer, aber lokal vorhanden: re-syncen');
-                        this.db.ref(remotePath).set(localParsed).catch(err => console.warn(err));
+                        ref.set(localParsed).catch(err => console.warn(err));
                     } else {
                         console.log('[SFL]', localKey, '- DB leer, lokale Daten beibehalten');
                     }

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sfl-manager-v11';
+const CACHE_VERSION = 'sfl-manager-v14';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -11,6 +11,8 @@ const ASSETS_TO_CACHE = [
   './offline.html',
   './manifest.webmanifest',
   './pwa-register.js',
+  './firebase-config.js',
+  './auth-gate.js',
   './firebase-sync.js',
   './assets/logo.png'
 ];
