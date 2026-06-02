@@ -52,16 +52,38 @@
                 justify-content: center;
                 padding: 1.5rem;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                overflow: hidden;
             }
             #sfl-auth-gate.is-hidden { display: none !important; }
+            .sfl-auth-bg {
+                position: absolute;
+                inset: -15px;
+                background-image: url('assets/login-bg.jpg');
+                background-size: cover;
+                background-position: center;
+                background-repeat: no-repeat;
+                filter: blur(3px) brightness(0.75) saturate(1.05);
+                transform: scale(1.04);
+                z-index: 0;
+            }
+            .sfl-auth-bg-tint {
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.45) 100%);
+                z-index: 1;
+            }
             .sfl-auth-card {
-                background: #ffffff;
+                position: relative;
+                z-index: 2;
+                background: rgba(255, 255, 255, 0.96);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
                 color: #111;
                 width: 100%;
                 max-width: 420px;
                 padding: 2rem 1.75rem;
                 border-radius: 14px;
-                box-shadow: 0 25px 60px rgba(0,0,0,0.45);
+                box-shadow: 0 25px 60px rgba(0,0,0,0.55);
             }
             .sfl-auth-card h2 {
                 font-size: 1.4rem;
@@ -139,6 +161,8 @@
         var overlay = document.createElement('div');
         overlay.id = 'sfl-auth-gate';
         overlay.innerHTML = `
+            <div class="sfl-auth-bg" aria-hidden="true"></div>
+            <div class="sfl-auth-bg-tint" aria-hidden="true"></div>
             <form class="sfl-auth-card" autocomplete="off">
                 <img src="assets/logo.png" alt="SFL" class="sfl-auth-logo" onerror="this.style.display='none'">
                 <h2>🔒 Geschützter Bereich</h2>
