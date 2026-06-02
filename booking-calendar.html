@@ -1897,8 +1897,13 @@
                     html += '<div class="booking-day-items">';
 
                     const isAdmin = currentUser && currentUser.role === 'Admin';
+                    const userTeam = currentUser ? currentUser.team : null;
                     groupedByDate[dateKey].forEach(booking => {
                         let actionElement;
+                        // Sichtbarkeit Löschen-Button:
+                        // - Nicht eingeloggt: kein Löschen
+                        // - Admin: alle Löschen-Buttons
+                        // - Trainer: nur eigene Mannschaft, keine Serien
                         if (booking.isFixedSeries) {
                             if (isAdmin) {
                                 actionElement = `
@@ -1911,7 +1916,12 @@
                                 actionElement = '<span class="booking-fixed-badge">Serie</span>';
                             }
                         } else {
-                            actionElement = `<button class="booking-delete" onclick="deleteBooking('${booking.id}', false)">Löschen</button>`;
+                            const canDelete = isAdmin || (currentUser && booking.team && booking.team === userTeam);
+                            if (canDelete) {
+                                actionElement = `<button class="booking-delete" onclick="deleteBooking('${booking.id}', false)">Löschen</button>`;
+                            } else {
+                                actionElement = '';
+                            }
                         }
 
                         const timeDisplay = booking.allDay
@@ -1947,8 +1957,14 @@
 
         // Buchung löschen
         function deleteBooking(id, isFixedSeries) {
+            if (!currentUser) {
+                alert('Bitte zuerst einloggen.');
+                return;
+            }
+            const isAdmin = currentUser.role === 'Admin';
+
             if (isFixedSeries) {
-                if (!currentUser || currentUser.role !== 'Admin') {
+                if (!isAdmin) {
                     alert('Serien-Termine können nur von Administratoren gelöscht werden.');
                     return;
                 }
@@ -1967,14 +1983,19 @@
                 return;
             }
 
-            const enteredCode = prompt('Bitte Trainer-Code zum Löschen eingeben:');
-
-            if (enteredCode === null) {
+            const numericIdForCheck = Number(id);
+            const targetBooking = bookings.find(b => b.id === numericIdForCheck || String(b.id) === String(id));
+            if (!targetBooking) {
+                alert('Buchung nicht gefunden.');
                 return;
             }
 
-            if (!isValidTrainerCode(enteredCode)) {
-                alert('Falscher Trainer-Code. Löschen nicht erlaubt.');
+            if (!isAdmin && targetBooking.team !== currentUser.team) {
+                alert('Du kannst nur Buchungen deiner eigenen Mannschaft löschen.');
+                return;
+            }
+
+            if (!confirm('Diese Buchung wirklich löschen?')) {
                 return;
             }
 
