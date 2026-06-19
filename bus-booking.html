@@ -17,7 +17,6 @@
     <script src="firebase-config.js"></script>
     <script src="auth-gate.js"></script>
     <script src="firebase-sync.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script src="email-config.js"></script>
     <script src="bus-mail.js"></script>
     <style>
@@ -1221,19 +1220,15 @@
             const result = await window.SFLBusMail.notifyPendingBusBooking(booking, saveBookings);
 
             if (result.sent) {
-                alert('Buchung gespeichert.\n\nDer Admin wurde zur Bestätigung informiert. Du erhältst eine Auftragseingangsbestätigung per E-Mail.');
+                alert('Buchung gespeichert.\n\nDein E-Mail-Programm öffnet sich mit einer Nachricht an den Admin.\nBitte auf „Senden“ klicken, damit die Anfrage ankommt.\n\n(Du wirst in CC gesetzt, falls deine E-Mail hinterlegt ist.)');
             } else if (result.reason === 'not-configured') {
-                alert('Buchung gespeichert.\n\nHinweis: E-Mail-Benachrichtigungen sind noch nicht eingerichtet (email-config.js).');
+                alert('Buchung gespeichert.');
             } else if (result.reason === 'send-failed') {
-                alert('Buchung gespeichert.\n\nDie E-Mail-Benachrichtigung konnte nicht versendet werden. Bitte den Admin direkt informieren.');
+                const detail = result.errorText ? `\n\nFehler: ${result.errorText}` : '';
+                alert('Buchung gespeichert.\n\nE-Mail konnte nicht vorbereitet werden.' + detail + '\n\nBitte den Admin direkt informieren.');
             } else {
                 alert('Buchung gespeichert.');
             }
-        }
-
-        function processPendingBusNotifications() {
-            if (!window.SFLBusMail) return;
-            window.SFLBusMail.processPendingNotifications(bookings, saveBookings);
         }
 
         function loadBookings() {
@@ -1248,7 +1243,6 @@
                 bookings = Array.isArray(data) ? data : [];
                 renderBookings();
                 renderCalendar();
-                processPendingBusNotifications();
             });
             window.SFL.subscribe(USERS_STORAGE_KEY, () => {
                 currentUser = getCurrentUser();
@@ -1260,7 +1254,6 @@
         loadBookings();
         currentUser = getCurrentUser();
         renderLoginBar();
-        processPendingBusNotifications();
 
         document.addEventListener('submit', (e) => {
             if (e.target && e.target.id === 'loginForm') {

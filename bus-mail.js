@@ -1,4 +1,4 @@
-// Bus-Buchungs-E-Mails: Admin-Erinnerung + Nutzer-Auftragseingangsbestätigung (EmailJS)
+// Bus-Buchung: Admin per mailto: informieren (kostenlos, kein Abo nötig)
 (function () {
     function getConfig() {
         return window.SFL_EMAIL_CONFIG || {};
@@ -6,17 +6,28 @@
 
     function isConfigured() {
         const cfg = getConfig();
-        const ej = cfg.emailjs || {};
-        return !!(cfg.enabled && ej.publicKey && ej.serviceId && ej.adminTemplateId && ej.userTemplateId);
+        return !!cfg.enabled;
     }
 
     function getAppBaseUrl() {
         const cfg = getConfig();
-        if (cfg.appBaseUrl) return cfg.appBaseUrl.replace(/\/$/, '');
+        let base = cfg.appBaseUrl || '';
+        if (base) {
+            base = base.replace(/\/$/, '');
+            if (/\.html$/i.test(base)) {
+                base = base.replace(/\/[^/]+\.html$/i, '');
+            }
+            return base;
+        }
         if (typeof location !== 'undefined' && location.origin) {
             return location.origin + location.pathname.replace(/[^/]+$/, '').replace(/\/$/, '');
         }
         return '';
+    }
+
+    function getBookingLink() {
+        const base = getAppBaseUrl();
+        return base ? `${base}/bus-booking.html` : 'bus-booking.html';
     }
 
     function formatGermanDate(dateStr) {
@@ -59,9 +70,11 @@
         return [...new Set(combined)];
     }
 
-    function buildBookingSummary(booking) {
+    function buildAdminMailBody(booking) {
         const dateLabel = formatGermanDate(booking.date);
         const lines = [
+            'Neue Bus-Buchung wartet auf Bestätigung in der SFL-App.',
+            '',
             `Datum: ${dateLabel}`,
             `Mannschaft: ${booking.team || '—'}`,
             `Anlass: ${booking.purpose || '—'}`,
@@ -72,78 +85,37 @@
         if (booking.driver) {
             lines.push(`Fahrer: ${booking.driver}`);
         }
-
         if (booking.bookedByName) {
             lines.push(`Gebucht von: ${booking.bookedByName}`);
         }
-
         if (booking.bookedByEmail) {
             lines.push(`Kontakt: ${booking.bookedByEmail}`);
         }
 
+        lines.push('', `Bitte in der App bestätigen: ${getBookingLink()}`);
+
         return lines.join('\n');
     }
 
-    function sendEmail(templateId, params) {
-        const cfg = getConfig();
-        const ej = cfg.emailjs;
-
-        if (typeof emailjs === 'undefined') {
-            return Promise.reject(new Error('EmailJS SDK nicht geladen'));
-        }
-
-        return emailjs.send(ej.serviceId, templateId, params, ej.publicKey);
-    }
-
-    function sendAdminReminder(booking) {
+    function openAdminMailto(booking) {
         const admins = getAdminRecipients();
         if (!admins.length) {
-            return Promise.reject(new Error('Keine Admin-E-Mail-Adresse konfiguriert'));
+            throw new Error('Keine Admin-E-Mail-Adresse konfiguriert');
         }
 
-        const summary = buildBookingSummary(booking);
-        const bookingLink = getAppBaseUrl() ? `${getAppBaseUrl()}/bus-booking.html` : 'bus-booking.html';
-
-        return Promise.all(admins.map((adminEmail) => {
-            return sendEmail(getConfig().emailjs.adminTemplateId, {
-                to_email: adminEmail,
-                subject: `Bus-Buchung zur Bestätigung: ${booking.team} – ${formatGermanDate(booking.date)}`,
-                team: booking.team || '',
-                date: formatGermanDate(booking.date),
-                purpose: booking.purpose || '',
-                destination: booking.destination || '',
-                driver: booking.driver || '—',
-                start_time: booking.startTime || '',
-                end_time: booking.endTime || '',
-                booked_by_name: booking.bookedByName || 'Unbekannt',
-                booked_by_email: booking.bookedByEmail || '—',
-                booking_link: bookingLink,
-                message: `Neue Bus-Buchung wartet auf deine Bestätigung.\n\n${summary}\n\nBitte in der App unter „Bus-Buchungen“ bestätigen:\n${bookingLink}`
-            });
-        }));
-    }
-
-    function sendUserConfirmation(booking) {
+        const subject = `Bus-Buchung zur Bestätigung: ${booking.team} – ${formatGermanDate(booking.date)}`;
+        const body = buildAdminMailBody(booking);
         const userEmail = (booking.bookedByEmail || '').trim();
-        if (!userEmail) {
-            return Promise.resolve({ skipped: true, reason: 'no-user-email' });
+
+        let mailto = `mailto:${admins.join(',')}`;
+        mailto += `?subject=${encodeURIComponent(subject)}`;
+        mailto += `&body=${encodeURIComponent(body)}`;
+
+        if (userEmail) {
+            mailto += `&cc=${encodeURIComponent(userEmail)}`;
         }
 
-        const summary = buildBookingSummary(booking);
-
-        return sendEmail(getConfig().emailjs.userTemplateId, {
-            to_email: userEmail,
-            to_name: booking.bookedByName || booking.team || 'Trainer',
-            subject: `Auftragseingang: Bus-Buchung ${formatGermanDate(booking.date)}`,
-            team: booking.team || '',
-            date: formatGermanDate(booking.date),
-            purpose: booking.purpose || '',
-            destination: booking.destination || '',
-            driver: booking.driver || '—',
-            start_time: booking.startTime || '',
-            end_time: booking.endTime || '',
-            message: `Hallo ${booking.bookedByName || 'Trainer'},\n\nvielen Dank! Wir haben deine Bus-Buchungsanfrage erhalten.\nDer Status ist aktuell „Ausstehend“ und wird vom Admin geprüft.\n\n${summary}\n\nDu erhältst eine weitere Nachricht, sobald die Buchung bestätigt wurde.`
-        });
+        window.location.href = mailto;
     }
 
     async function notifyPendingBusBooking(booking, saveCallback) {
@@ -152,48 +124,28 @@
         }
 
         if (!isConfigured()) {
-            console.warn('[Bus-Mail] E-Mail-Versand nicht konfiguriert (email-config.js)');
             return { sent: false, reason: 'not-configured' };
         }
 
-        booking.notificationSent = true;
-        if (typeof saveCallback === 'function') {
-            saveCallback();
-        }
-
         try {
-            await sendAdminReminder(booking);
-
-            try {
-                await sendUserConfirmation(booking);
-            } catch (userErr) {
-                console.warn('[Bus-Mail] Nutzer-Bestätigung fehlgeschlagen:', userErr);
-            }
-
-            console.log('[Bus-Mail] Benachrichtigungen versendet für Buchung', booking.id);
-            return { sent: true };
-        } catch (err) {
-            booking.notificationSent = false;
+            openAdminMailto(booking);
+            booking.notificationSent = true;
             if (typeof saveCallback === 'function') {
                 saveCallback();
             }
-            console.error('[Bus-Mail] Versand fehlgeschlagen:', err);
-            return { sent: false, reason: 'send-failed', error: err };
+            return { sent: true, method: 'mailto' };
+        } catch (err) {
+            console.error('[Bus-Mail] mailto fehlgeschlagen:', err);
+            return {
+                sent: false,
+                reason: 'send-failed',
+                errorText: err.message || String(err)
+            };
         }
     }
 
-    async function processPendingNotifications(bookings, saveCallback) {
-        if (!Array.isArray(bookings) || !isConfigured()) return;
-
-        const pending = bookings.filter((booking) =>
-            booking &&
-            booking.status === 'pending' &&
-            !booking.notificationSent
-        );
-
-        for (const booking of pending) {
-            await notifyPendingBusBooking(booking, saveCallback);
-        }
+    function processPendingNotifications() {
+        // mailto: nur beim Speichern einer neuen Buchung – nicht beim Seitenaufruf
     }
 
     window.SFLBusMail = {
