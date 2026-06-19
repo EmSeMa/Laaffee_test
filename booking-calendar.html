@@ -1876,26 +1876,6 @@
             applyTeamRestrictions();
             resetFieldPortionInputs();
             dialogOverlay.classList.add('active');
-            calculatePrice();
-        }
-
-        // Preis berechnen
-        function calculatePrice() {
-            const startTime = startTimeInput.value;
-            const endTime = endTimeInput.value;
-            
-            if (startTime && endTime) {
-                const [startHour, startMin] = startTime.split(':').map(Number);
-                const [endHour, endMin] = endTime.split(':').map(Number);
-                
-                const startTotalMin = startHour * 60 + startMin;
-                const endTotalMin = endHour * 60 + endMin;
-                
-                let hours = (endTotalMin - startTotalMin) / 60;
-                
-                if (hours < 0) hours += 24;
-                if (hours === 0) hours = 1;
-            }
         }
 
         function timeToMinutes(timeStr) {
@@ -1938,10 +1918,6 @@
                 );
             });
         }
-
-        // Event Listener für Zeit-Input
-        startTimeInput.addEventListener('change', calculatePrice);
-        endTimeInput.addEventListener('change', calculatePrice);
 
         // Dialog abbrechen
         cancelBtn.addEventListener('click', () => {

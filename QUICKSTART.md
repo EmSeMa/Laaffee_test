@@ -1,119 +1,54 @@
-# 🏃 Sportplatz Manager - Schnellstart Guide
+# Ulrichsheide Manager – Schnellstart
 
-## 📋 Was ist das?
+## Was ist das?
 
-Eine **vollständige Mobile-App + Backend** für die Verwaltung von Sportplätzen!
+Eine **Progressive Web App (PWA)** für die Sportfreunde Lauffen:
 
-Die App ermöglicht:
-- 📅 Sportplatz-Buchungen verwalten
-- 🔧 Wartungsaufgaben planen
-- ⚽ Verfügbare Felder anschauen
-- 👤 Benutzerprofil verwalten
+- Sportplatz-Buchungen und feste Trainingszeiten
+- Busreservierung
+- Trainer- und Benutzerverwaltung
+- Echtzeit-Sync über Firebase
 
-## 🎯 Was brauchst du?
+## Voraussetzungen
 
-**Installiert sein muss:**
-- Node.js 16+ ([Download](https://nodejs.org/))
-- PostgreSQL 12+ ([Download](https://www.postgresql.org/))
+- Firebase-Projekt **sfl-manager** (bereits konfiguriert in `firebase-config.js`)
+- Vereins-Account in Firebase Authentication (`verein@sfl-lauffen.de`)
+- Optional: lokaler Webserver oder Deployment (GitHub Pages, Firebase Hosting)
 
-**Optional (für Mobile-Testing):**
-- Android Studio (für Android Emulator)
-- Xcode (für iOS Simulator auf Mac)
-- Expo App (auf Physical Device)
+## Quick Start
 
-## 🚀 Quick Start (5 Minuten)
+1. **App öffnen** – z. B. `index.html` über einen Webserver (nicht nur `file://`, damit PWA und Service Worker funktionieren).
 
-### 1. Backend starten
+2. **Vereinspasswort eingeben** – Login-Maske erscheint automatisch.
 
-```bash
-# Terminal 1:
-cd sportplatz-app/backend
-npm install
-npm run dev
-```
+3. **Trainer-Code** – Auf Seiten wie Buchung oder Benutzerverwaltung mit persönlichem Code anmelden.
 
-Der Server läuft jetzt auf: **http://localhost:5000**
+4. **PWA installieren** – Im Browser „Zum Startbildschirm hinzufügen“ (Details in `PWA-ANLEITUNG.md`).
 
-### 2. Datenbank initialisieren
+## Wichtige Dateien
 
-```bash
-# Terminal 2:
-cd sportplatz-app/backend
-createdb sportplatz_db
-psql sportplatz_db < database.sql
-```
+| Datei | Zweck |
+|---|---|
+| `firebase-config.js` | Firebase-Projekt & Login-E-Mail |
+| `auth-gate.js` | Vereins-Login (Passwort) |
+| `firebase-sync.js` | Daten-Sync mit Realtime Database |
+| `sw.js` | Offline-Cache |
 
-### 3. Mobile App starten
+## Häufige Probleme
 
-```bash
-# Terminal 3:
-cd sportplatz-app/mobile
-npm install
-npm start
-```
+**Login schlägt fehl**
+- Passwort in Firebase Auth prüfen
+- E-Mail in `firebase-config.js` muss zum Firebase-User passen
 
-Dann drücken:
-- `i` für iOS Simulator
-- `a` für Android Emulator
-- `w` für Web Browser
-- Oder QR-Code mit Expo App scannen
+**Keine Sync-Daten**
+- Internetverbindung prüfen
+- Firebase Realtime Database Regeln prüfen (siehe `PWA-ANLEITUNG.md`)
 
-## 📁 Projektstruktur Quick Ref
+**App offline ohne Cache**
+- Seite einmal online laden, damit der Service Worker Assets cacht
 
-```
-sportplatz-app/
-├── backend/          ← Node.js API Server
-│   └── 📖 README.md  ← Backend Doku
-├── mobile/           ← React Native App
-│   └── 📖 README.md  ← Mobile Doku
-└── README.md         ← Hauptdokumentation
-```
+## Weitere Hilfe
 
-## 🔐 Test Daten
-
-Nach dem Setup kannst du diese Testdaten verwenden:
-
-**Login:**
-- Email: `test@example.com`
-- Password: `password123`
-
-**Oder einen neuen Benutzer registrieren!**
-
-## 📚 Weitere Dokumentation
-
-- [Backend README](./backend/README.md) - API Dokumentation
-- [Mobile README](./mobile/README.md) - App Dokumentation
-- [Sportplatzverwaltungsplan](../Sportplatzverwaltungsplan.md) - Administrativer Plan
-
-## 🛠️ Häufige Probleme
-
-**Fehler: "Cannot find module 'express'"**
-```bash
-cd backend && npm install
-```
-
-**Fehler: "Database connection failed"**
-- Prüfe ob PostgreSQL läuft: `pg_isready`
-- Überprüfe .env Einstellungen
-
-**App zeigt blank screen**
-- Expo Server läuft noch? (`npm start`)
-- Correct API URL in `mobile/src/services/api.js`?
-
-## 💡 Nächste Schritte
-
-1. ✅ Backend testen: `curl http://localhost:5000/health`
-2. ✅ Ein Konto registrieren in der Mobile App
-3. ✅ Eine Buchung erstellen
-4. ✅ Eine Wartungsaufgabe hinzufügen
-5. 🚀 App für iOS/Android bauen (siehe Deployment Docs)
-
-## 📞 Support
-
-Fragen? Schau in die README-Dateien der jeweiligen Komponenten!
-
----
-
-**Version:** 1.0.0  
-**Letztes Update:** 28.05.2026  
-**Entwickler:** DeineTeam
+- [PWA-ANLEITUNG.md](./PWA-ANLEITUNG.md)
+- [SICHERHEIT-FIREBASE-AUTH.md](./SICHERHEIT-FIREBASE-AUTH.md)
+- [README.md](./README.md)

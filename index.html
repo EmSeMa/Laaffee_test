@@ -122,46 +122,6 @@
             opacity: 0.95;
         }
 
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            font-size: 1rem;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: white;
-            color: #000000;
-            font-weight: bold;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid white;
-        }
-
-        .btn-secondary:hover {
-            background: white;
-            color: #000000;
-        }
-
         .features {
             position: relative;
             width: 100%;
@@ -510,11 +470,6 @@
                 font-size: 2rem;
             }
 
-            .cta-buttons {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
             .contacts-grid {
                 grid-template-columns: 1fr;
             }
@@ -582,7 +537,7 @@
             <a href="users.html" class="feature-card">
                 <div class="feature-icon">👥</div>
                 <h3>Benutzerverwaltung</h3>
-                <p>Sichere Authentifizierung mit JWT. Admin- und Benutzerrollen für granulare Kontrolle.</p>
+                <p>Trainer-Codes, Admin-Rollen und zentraler Vereins-Login über Firebase.</p>
             </a>
             <a href="analytics.html" class="feature-card" id="analyticsCard" hidden>
                 <div class="feature-icon">📊</div>
@@ -867,14 +822,6 @@
                 }
             });
         });
-
-        // CTA Button Actions (nur binden, falls vorhanden)
-        const ctaBtn = document.querySelector('.btn-primary');
-        if (ctaBtn) {
-            ctaBtn.addEventListener('click', () => {
-                alert('🚀 App wird geöffnet...\nStarte: npm start im mobile Ordner');
-            });
-        }
 
         (function () {
             const SESSION_KEY = 'currentUserId';

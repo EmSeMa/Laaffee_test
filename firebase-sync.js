@@ -10,8 +10,7 @@ const SYNCED_KEYS = {
     'busBookings': 'busBookings',
     'youthCoaches': 'users',
     'deletedFixedSeriesBookings': 'deletedSeries',
-    'customSportFields': 'customFields',
-    'sfl_chat_messages': 'chat'
+    'customSportFields': 'customFields'
 };
 
 const SFL = {

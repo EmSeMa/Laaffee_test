@@ -2,7 +2,7 @@
 
 ## Was du jetzt hast (Stand der Implementierung)
 
-- Beim Öffnen **jeder** Seite (`index.html`, `booking-calendar.html`, `bus-booking.html`, `users.html`, `fields.html`, `maintenance.html`, `analytics.html`) erscheint **zuerst eine Login-Maske**.
+- Beim Öffnen **jeder** Seite (`index.html`, `booking-calendar.html`, `bus-booking.html`, `users.html`, `fields.html`, `analytics.html`) erscheint **zuerst eine Login-Maske**.
 - Erst nach Eingabe von **E-Mail + Vereinspasswort** wird die Seite freigegeben.
 - `firebase-sync.js` verbindet sich **erst nach erfolgreichem Login** mit der Datenbank.
 - Sobald wir gleich die Datenbank-Regeln umstellen, kann **niemand** mehr ohne Login Daten lesen oder schreiben — auch nicht über die Firebase-URL direkt oder über Browser-Tools.
@@ -106,7 +106,7 @@ Beides ist nicht zwingend, aber „nice to have". Sag Bescheid, wenn du das ange
 - [ ] **Firebase Console → Authentication → Email/Password aktivieren**
 - [ ] **Vereinsaccount mit E-Mail + Passwort anlegen**
 - [ ] **Realtime Database Rules auf `"auth != null"` setzen**
-- [ ] **Geänderte Dateien zu GitHub pushen** (`auth-gate.js`, `firebase-config.js`, `firebase-sync.js`, alle 7 HTML-Seiten, `sw.js`)
+- [ ] **Geänderte Dateien zu GitHub pushen** (`auth-gate.js`, `firebase-config.js`, `firebase-sync.js`, alle HTML-Seiten, `sw.js`)
 - [ ] **In der App testen:** Inkognito-Browser öffnen → muss Login-Maske zeigen, Eingabe → Seite funktioniert. Versuch mit falscher E-Mail/falschem Passwort → muss Fehlermeldung anzeigen.
 
 Wenn etwas hakt, sag Bescheid.

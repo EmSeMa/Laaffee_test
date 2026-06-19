@@ -96,7 +96,6 @@ Die App ist bereits mit deinem Firebase-Projekt **`sfl-manager`** verbunden. Fol
 | Trainer / Benutzer | `/users` |
 | Gelöschte Serien-Termine | `/deletedSeries` |
 | Eigene Sportplätze | `/customFields` |
-| Vereins-Chat | `/chat` |
 
 ### 🔐 Wichtig: Datenbank-Regeln setzen
 
@@ -125,7 +124,7 @@ Falls du beim Erstellen "Testmodus" gewählt hast, hat Firebase automatisch eine
 
 ### Was funktioniert jetzt?
 
-- ✅ **Live-Chat**: Schreibst du auf Handy A, sieht es Handy B sofort
+- ✅ **Live-Sync**: Änderungen auf Handy A erscheinen auf Handy B sofort
 - ✅ **Buchungen vereinsweit**: Jeder Trainer sieht alle Buchungen
 - ✅ **Bus-Reservierungen vereinsweit**
 - ✅ **Trainer-Codes zentral**: Wer in `users.html` Admin/Trainer anlegt, kann sich überall einloggen
