@@ -1,4 +1,4 @@
-// Bus-Buchungs-E-Mails: Admin-Erinnerung + Nutzer-Auftragseingangsbestätigung
+// Bus-Buchungs-E-Mails: Admin-Erinnerung + Nutzer-Auftragseingangsbestätigung (EmailJS)
 (function () {
     function getConfig() {
         return window.SFL_EMAIL_CONFIG || {};

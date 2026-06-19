@@ -8,12 +8,12 @@ window.SFL_EMAIL_CONFIG = {
     adminEmails: ['jugendleitung@sportfreunde-lauffen.de'],
 
     // Link zur Bus-Buchungsseite (für Admin-Erinnerung)
-    appBaseUrl: '',
+    appBaseUrl: 'https://emsema.github.io/Laaffee_test/bus-booking.html',
 
     emailjs: {
-        publicKey: '',
-        serviceId: '',
-        adminTemplateId: '',
-        userTemplateId: ''
+        publicKey: 'GYRUtj9pHcmQvc7dV',
+        serviceId: 'service_jdahfka',
+        adminTemplateId: 'template_wmpt0ee',
+        userTemplateId: 'template_zp5leka'
     }
 };
