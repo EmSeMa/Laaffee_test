@@ -193,17 +193,18 @@
             border-color: #000000;
         }
 
-        .day.past {
-            background: #fdecea;
-            border-color: #e57373;
-            color: #c62828;
-            pointer-events: none;
-        }
-
         .day.booked {
             background: #e8f5e9;
             border-color: #4caf50;
             color: #2e7d32;
+        }
+
+        .day.past,
+        .day.past.booked {
+            background: #fdecea;
+            border-color: #e57373;
+            color: #c62828;
+            pointer-events: none;
         }
 
         .day.selected {
@@ -2021,17 +2022,28 @@
             }
         }
 
+        function purgePastBookings() {
+            const todayStr = formatDate(new Date());
+            const before = bookings.length;
+            bookings = bookings.filter(booking => booking.date >= todayStr);
+            if (bookings.length !== before) {
+                saveBookings();
+            }
+        }
+
         // Buchungen laden
         function loadBookings() {
             const saved = localStorage.getItem('sportplatzBookings');
             if (saved) {
                 try { bookings = JSON.parse(saved) || []; } catch (e) { bookings = []; }
             }
+            purgePastBookings();
         }
 
         if (window.SFL) {
             window.SFL.subscribe('sportplatzBookings', (data) => {
                 bookings = Array.isArray(data) ? data : [];
+                purgePastBookings();
                 renderBookings();
                 renderCalendar();
                 renderAvailability();

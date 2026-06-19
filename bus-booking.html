@@ -17,6 +17,9 @@
     <script src="firebase-config.js"></script>
     <script src="auth-gate.js"></script>
     <script src="firebase-sync.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script src="email-config.js"></script>
+    <script src="bus-mail.js"></script>
     <style>
         * {
             margin: 0;
@@ -1060,7 +1063,11 @@
                     driver: driverInput.value.trim(),
                     startTime: startTimeInput.value,
                     endTime: endTimeInput.value,
-                    status: 'pending'
+                    status: 'pending',
+                    bookedByUserId: currentUser ? currentUser.id : null,
+                    bookedByName: currentUser ? currentUser.name : '',
+                    bookedByEmail: currentUser ? (currentUser.email || '') : '',
+                    notificationSent: false
                 };
 
                 if (hasBusConflict(booking)) {
@@ -1083,6 +1090,8 @@
                 startTimeInput.value = '14:00';
                 endTimeInput.value = '20:00';
                 termsAccept.checked = false;
+
+                notifyNewBusBooking(booking);
             }
         });
 
@@ -1206,6 +1215,27 @@
             }
         }
 
+        async function notifyNewBusBooking(booking) {
+            if (!window.SFLBusMail || booking.status !== 'pending') return;
+
+            const result = await window.SFLBusMail.notifyPendingBusBooking(booking, saveBookings);
+
+            if (result.sent) {
+                alert('Buchung gespeichert.\n\nDer Admin wurde zur Bestätigung informiert. Du erhältst eine Auftragseingangsbestätigung per E-Mail.');
+            } else if (result.reason === 'not-configured') {
+                alert('Buchung gespeichert.\n\nHinweis: E-Mail-Benachrichtigungen sind noch nicht eingerichtet (email-config.js).');
+            } else if (result.reason === 'send-failed') {
+                alert('Buchung gespeichert.\n\nDie E-Mail-Benachrichtigung konnte nicht versendet werden. Bitte den Admin direkt informieren.');
+            } else {
+                alert('Buchung gespeichert.');
+            }
+        }
+
+        function processPendingBusNotifications() {
+            if (!window.SFLBusMail) return;
+            window.SFLBusMail.processPendingNotifications(bookings, saveBookings);
+        }
+
         function loadBookings() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
@@ -1218,6 +1248,7 @@
                 bookings = Array.isArray(data) ? data : [];
                 renderBookings();
                 renderCalendar();
+                processPendingBusNotifications();
             });
             window.SFL.subscribe(USERS_STORAGE_KEY, () => {
                 currentUser = getCurrentUser();
@@ -1229,6 +1260,7 @@
         loadBookings();
         currentUser = getCurrentUser();
         renderLoginBar();
+        processPendingBusNotifications();
 
         document.addEventListener('submit', (e) => {
             if (e.target && e.target.id === 'loginForm') {

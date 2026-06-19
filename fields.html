@@ -630,6 +630,37 @@
             });
         }
 
+        function formatDateKey(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getSavedBookings() {
+            const todayStr = formatDateKey(new Date());
+            let list = [];
+
+            try {
+                list = JSON.parse(localStorage.getItem('sportplatzBookings') || '[]');
+            } catch (e) {
+                return [];
+            }
+
+            if (!Array.isArray(list)) return [];
+
+            const futureBookings = list.filter(booking => booking.date >= todayStr);
+            if (futureBookings.length !== list.length) {
+                if (window.SFL) {
+                    window.SFL.save('sportplatzBookings', futureBookings);
+                } else {
+                    localStorage.setItem('sportplatzBookings', JSON.stringify(futureBookings));
+                }
+            }
+
+            return futureBookings;
+        }
+
         function renderFixedTrainings() {
             const container = document.getElementById('fixedTrainingList');
 
@@ -665,7 +696,7 @@
 
         function renderTrainingOverview() {
             const container = document.getElementById('trainingOverviewList');
-            const savedBookings = JSON.parse(localStorage.getItem('sportplatzBookings') || '[]');
+            const savedBookings = getSavedBookings();
 
             if (!savedBookings.length) {
                 container.innerHTML = '<div class="overview-empty">Keine Trainingszeiten vorhanden.</div>';
