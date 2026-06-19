@@ -1215,19 +1215,34 @@
         }
 
         async function notifyNewBusBooking(booking) {
-            if (!window.SFLBusMail || booking.status !== 'pending') return;
+            if (!window.SFLBusMail || booking.status !== 'pending') {
+                alert('Buchung gespeichert.\n\nDer Admin sieht die Anfrage in der App unter „Ausstehend“.');
+                return;
+            }
 
             const result = await window.SFLBusMail.notifyPendingBusBooking(booking, saveBookings);
 
             if (result.sent) {
-                alert('Buchung gespeichert.\n\nDein E-Mail-Programm öffnet sich mit einer Nachricht an den Admin.\nBitte auf „Senden“ klicken, damit die Anfrage ankommt.\n\n(Du wirst in CC gesetzt, falls deine E-Mail hinterlegt ist.)');
-            } else if (result.reason === 'not-configured') {
-                alert('Buchung gespeichert.');
-            } else if (result.reason === 'send-failed') {
-                const detail = result.errorText ? `\n\nFehler: ${result.errorText}` : '';
-                alert('Buchung gespeichert.\n\nE-Mail konnte nicht vorbereitet werden.' + detail + '\n\nBitte den Admin direkt informieren.');
+                alert('Buchung gespeichert.\n\nDein E-Mail-Programm sollte sich jetzt öffnen.\nBitte dort auf „Senden“ klicken, damit der Admin informiert wird.');
+                return;
+            }
+
+            let mailto = result.mailto;
+            if (!mailto && window.SFLBusMail.buildMailtoUrl) {
+                mailto = window.SFLBusMail.buildMailtoUrl(booking);
+            }
+
+            const openMail = mailto && confirm(
+                'Buchung gespeichert.\n\n' +
+                'Das E-Mail-Programm konnte nicht automatisch geöffnet werden.\n' +
+                'Möchtest du die Admin-E-Mail jetzt manuell öffnen?\n\n' +
+                '(Der Admin sieht die Buchung auch in der App unter „Ausstehend“.)'
+            );
+
+            if (openMail && mailto) {
+                window.location.href = mailto;
             } else {
-                alert('Buchung gespeichert.');
+                alert('Buchung gespeichert.\n\nDer Admin sieht die Anfrage in der App unter „Ausstehend“.');
             }
         }
 
