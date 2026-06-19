@@ -200,6 +200,31 @@
             color: #2e7d32;
         }
 
+        .day.fully-blocked {
+            background: #c0392b;
+            border-color: #962d22;
+            color: #fff;
+        }
+
+        .day.fully-blocked.today {
+            background: #962d22;
+            border-color: #7b241c;
+            color: #fff;
+        }
+
+        .day.fully-blocked.selected {
+            background: #7b241c;
+            border-color: #5a1a14;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(192, 57, 43, 0.45);
+        }
+
+        .day.past.fully-blocked {
+            background: #e57373;
+            border-color: #c0392b;
+            color: #fff;
+        }
+
         .day.past,
         .day.past.booked {
             background: #fdecea;
@@ -216,6 +241,53 @@
         }
 
         /* Dialog */
+        .field-portion-options,
+        .field-half-select {
+            display: flex;
+            flex-direction: column;
+            gap: 0.55rem;
+        }
+
+        .field-half-select {
+            margin-top: 0.65rem;
+            padding-left: 0.75rem;
+            border-left: 3px solid #e0e0e0;
+        }
+
+        .field-portion-option {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #333;
+        }
+
+        .field-portion-option input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .field-portion-option input:disabled + span {
+            color: #999;
+        }
+
+        .availability-booking.half-field {
+            border: 1px dashed rgba(255, 255, 255, 0.75);
+            font-size: 0.7rem;
+        }
+
+        .legend-box.half-field {
+            background: #000;
+            width: 8px;
+            box-shadow: 8px 0 0 #e8f5e9;
+        }
+
+        .booking-item.half-field {
+            border-left-color: #666;
+        }
+
         .dialog-overlay {
             display: none;
             position: fixed;
@@ -335,6 +407,70 @@
         .btn-cancel {
             background: #f0f0f0;
             color: #333;
+        }
+
+        .series-delete-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .series-delete-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .series-delete-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            cursor: pointer;
+        }
+
+        .series-delete-option input {
+            margin-top: 0.2rem;
+        }
+
+        .series-delete-range {
+            display: none;
+            margin-left: 1.5rem;
+            padding-top: 0.25rem;
+        }
+
+        .series-delete-range.active {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .series-delete-range label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .series-delete-range input {
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.95rem;
+        }
+
+        .btn-danger {
+            background: #c0392b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #a93226;
         }
 
         .btn-cancel:hover {
@@ -563,6 +699,11 @@
             min-width: 0;
         }
 
+        .availability-track.has-all-day {
+            background: #fdecea;
+            border-color: #e6b0aa;
+        }
+
         .availability-hours {
             position: absolute;
             top: 0;
@@ -607,6 +748,12 @@
             border: 1px dashed #fff;
         }
 
+        .availability-booking.all-day {
+            background: #c0392b;
+            border: 1px solid #962d22;
+            z-index: 2;
+        }
+
         .availability-legend {
             display: flex;
             gap: 1.2rem;
@@ -642,6 +789,15 @@
             background: #555;
             border: 1px dashed #fff;
             outline: 1px solid #aaa;
+        }
+
+        .legend-box.all-day {
+            background: #c0392b;
+        }
+
+        .booking-item.all-day {
+            background: #fdecea;
+            border-left-color: #c0392b;
         }
 
         .availability-empty {
@@ -1058,6 +1214,8 @@
             <div class="availability-legend">
                 <span><span class="legend-box free"></span>Frei</span>
                 <span><span class="legend-box booked"></span>Belegt (manuelle Buchung)</span>
+                <span><span class="legend-box half-field"></span>Halber Platz</span>
+                <span><span class="legend-box all-day"></span>Ganzer Tag</span>
                 <span><span class="legend-box fixed-series"></span>Festes Training (Serie)</span>
             </div>
         </div>
@@ -1075,6 +1233,30 @@
                         <option value="2">Trainingsplatz - Platz 2</option>
                         <option value="3">Trainingsplatz - Platz 3</option>
                     </select>
+                </div>
+
+                <div class="field-select" id="fieldPortionWrapper">
+                    <label style="display:block; font-weight:bold; color:#333; margin-bottom:0.5rem;">Platzbelegung:</label>
+                    <div class="field-portion-options">
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldPortion" value="full" checked>
+                            <span>Ganzer Platz</span>
+                        </label>
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldPortion" value="half">
+                            <span>Halber Platz</span>
+                        </label>
+                    </div>
+                    <div class="field-half-select" id="fieldHalfSelect" style="display:none;">
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldHalf" value="half1" checked>
+                            <span>1. Hälfte</span>
+                        </label>
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldHalf" value="half2">
+                            <span>2. Hälfte</span>
+                        </label>
+                    </div>
                 </div>
 
                 <div class="field-select" style="display: flex; align-items: center; gap: 0.5rem;">
@@ -1136,6 +1318,40 @@
         </div>
     </div>
 
+    <!-- Serien-Löschen Dialog -->
+    <div class="dialog-overlay" id="seriesDeleteOverlay">
+        <div class="dialog">
+            <h3>Serien-Termin löschen</h3>
+            <div class="dialog-content">
+                <div class="series-delete-info" id="seriesDeleteInfo"></div>
+                <div class="series-delete-options">
+                    <label class="series-delete-option">
+                        <input type="radio" name="seriesDeleteMode" value="single" checked>
+                        <span>Nur diesen Termin löschen</span>
+                    </label>
+                    <label class="series-delete-option">
+                        <input type="radio" name="seriesDeleteMode" value="range">
+                        <span>Serie für Zeitraum löschen</span>
+                    </label>
+                </div>
+                <div class="series-delete-range" id="seriesDeleteRange">
+                    <label>
+                        Von
+                        <input type="date" id="seriesDeleteFrom">
+                    </label>
+                    <label>
+                        Bis
+                        <input type="date" id="seriesDeleteTo">
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button type="button" class="btn-cancel" id="seriesDeleteCancelBtn">Abbrechen</button>
+                <button type="button" class="btn-danger" id="seriesDeleteConfirmBtn">Löschen</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const monthYear = document.getElementById('monthYear');
         const calendarDays = document.getElementById('calendarDays');
@@ -1158,6 +1374,76 @@
         const multiDayDateWrapper = document.getElementById('multiDayDateWrapper');
         const endDateInput = document.getElementById('endDateInput');
         const multiDayInfo = document.getElementById('multiDayInfo');
+        const fieldHalfSelect = document.getElementById('fieldHalfSelect');
+
+        function normalizeFieldPortion(booking) {
+            if (!booking) return 'full';
+            const portion = booking.fieldPortion;
+            if (portion === 'half1' || portion === 'half2') return portion;
+            return 'full';
+        }
+
+        function portionsConflict(portionA, portionB) {
+            if (portionA === 'full' || portionB === 'full') return true;
+            return portionA === portionB;
+        }
+
+        function getFieldPortionLabel(portion) {
+            if (portion === 'half1') return 'Halber Platz (1. Hälfte)';
+            if (portion === 'half2') return 'Halber Platz (2. Hälfte)';
+            return 'Ganzer Platz';
+        }
+
+        function getSelectedFieldPortion() {
+            if (allDayCheckbox && allDayCheckbox.checked) return 'full';
+            const portionMode = document.querySelector('input[name="fieldPortion"]:checked');
+            if (portionMode && portionMode.value === 'half') {
+                const halfChoice = document.querySelector('input[name="fieldHalf"]:checked');
+                return halfChoice ? halfChoice.value : 'half1';
+            }
+            return 'full';
+        }
+
+        function updateFieldPortionVisibility() {
+            const isHalf = document.querySelector('input[name="fieldPortion"][value="half"]')?.checked;
+            const isAllDay = allDayCheckbox && allDayCheckbox.checked;
+            if (fieldHalfSelect) {
+                fieldHalfSelect.style.display = (isHalf && !isAllDay) ? 'flex' : 'none';
+            }
+            document.querySelectorAll('input[name="fieldPortion"]').forEach(radio => {
+                if (radio.value === 'half') {
+                    radio.disabled = !!isAllDay;
+                }
+            });
+            if (isAllDay) {
+                const fullRadio = document.querySelector('input[name="fieldPortion"][value="full"]');
+                if (fullRadio) fullRadio.checked = true;
+            }
+        }
+
+        function resetFieldPortionInputs() {
+            const fullRadio = document.querySelector('input[name="fieldPortion"][value="full"]');
+            if (fullRadio) fullRadio.checked = true;
+            const half1Radio = document.querySelector('input[name="fieldHalf"][value="half1"]');
+            if (half1Radio) half1Radio.checked = true;
+            updateFieldPortionVisibility();
+        }
+
+        function applyPortionLayout(left, width, portion) {
+            if (portion === 'half1') {
+                return {
+                    left: left,
+                    width: width * 0.5
+                };
+            }
+            if (portion === 'half2') {
+                return {
+                    left: left + width * 0.5,
+                    width: width * 0.5
+                };
+            }
+            return { left, width };
+        }
 
         function updateCustomTeamVisibility() {
             if (!customTeamWrapper) return;
@@ -1233,10 +1519,14 @@
             } else {
                 timeSlotWrapper.style.display = 'grid';
             }
+            updateFieldPortionVisibility();
         }
 
         teamSelect.addEventListener('change', handleTeamChange);
         if (allDayCheckbox) allDayCheckbox.addEventListener('change', updateAllDayVisibility);
+        document.querySelectorAll('input[name="fieldPortion"], input[name="fieldHalf"]').forEach(input => {
+            input.addEventListener('change', updateFieldPortionVisibility);
+        });
         if (multiDayCheckbox) multiDayCheckbox.addEventListener('change', updateMultiDayVisibility);
         if (endDateInput) endDateInput.addEventListener('change', updateMultiDayInfo);
 
@@ -1254,21 +1544,23 @@
             'Sonntag': 0
         };
         const FIXED_TRAINING_SERIES = [
-            { team: 'Bambini', day: 'Freitag', startTime: '17:00', endTime: '18:00', field: 'Platz 1' },
-            { team: 'F-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 1' },
-            { team: 'E-Jugend', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 2' },
-            { team: 'E-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 2' },
-            { team: 'D-Jugend', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
-            { team: 'D-Jugend', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
-            { team: 'C-Jugend', day: 'Montag', startTime: '18:00', endTime: '19:30', field: 'Platz 2' },
-            { team: 'C-Jugend', day: 'Donnerstag', startTime: '17:00', endTime: '18:30', field: 'Platz 3' },
-            { team: 'B-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },            
-            { team: 'A-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },           
-            { team: 'Aktive 1', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
-            { team: 'Aktive 1', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
-            { team: 'Aktive 2', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
-            { team: 'Aktive 2', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
-            { team: 'AH', day: 'Freitag', startTime: '18:00', endTime: '19:30', field: 'Platz 1' }
+            { team: 'Bambini', day: 'Freitag', startTime: '17:00', endTime: '18:00', field: 'Platz 1', fieldPortion: 'half2' },
+            { team: 'F-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 1', fieldPortion: 'half1' },
+            { team: 'E-Jugend', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'E-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'D-Jugend', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'full' },
+            { team: 'D-Jugend', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'full' },
+            { team: 'C-Jugend', day: 'Montag', startTime: '18:00', endTime: '19:30', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'C-Jugend', day: 'Donnerstag', startTime: '17:00', endTime: '18:30', field: 'Platz 3', fieldPortion: 'full' },
+            { team: 'B-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3', fieldPortion: 'half1' },
+            { team: 'B-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'half1' },
+            { team: 'A-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3', fieldPortion: 'half2' },
+            { team: 'A-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'half2' },
+            { team: 'Aktive 1', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)', fieldPortion: 'full' },
+            { team: 'Aktive 1', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)', fieldPortion: 'full' },
+            { team: 'Aktive 2', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'Aktive 2', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'AH', day: 'Freitag', startTime: '18:00', endTime: '19:30', field: 'Platz 1', fieldPortion: 'half1' }
         ];
         const USERS_STORAGE_KEY = 'youthCoaches';
         const SESSION_KEY = 'currentUserId';
@@ -1362,6 +1654,25 @@
             return match ? match[1] : fieldText;
         }
 
+        const CALENDAR_FIELD_IDS = ['1', '2', '3'];
+
+        function getBookingFieldId(booking) {
+            return String(booking.fieldId || getFieldIdFromText(booking.field) || '');
+        }
+
+        function isAllFieldsAllDayBlocked(dateStr) {
+            const coveredFields = new Set();
+            bookings
+                .filter(b => b.date === dateStr && b.allDay && normalizeFieldPortion(b) === 'full')
+                .forEach(b => {
+                    const fieldId = getBookingFieldId(b);
+                    if (CALENDAR_FIELD_IDS.includes(fieldId)) {
+                        coveredFields.add(fieldId);
+                    }
+                });
+            return CALENDAR_FIELD_IDS.every(id => coveredFields.has(id));
+        }
+
         const DELETED_SERIES_KEY = 'deletedFixedSeriesBookings';
 
         function getDeletedSeriesIds() {
@@ -1408,6 +1719,7 @@
                             team: series.team,
                             startTime: series.startTime,
                             endTime: series.endTime,
+                            fieldPortion: series.fieldPortion || 'full',
                             isFixedSeries: true
                         });
                     }
@@ -1456,7 +1768,9 @@
                     classes += ' past';
                 }
 
-                if (getAllBookings().some(b => b.date === dateStr)) {
+                if (isAllFieldsAllDayBlocked(dateStr)) {
+                    classes += ' fully-blocked';
+                } else if (getAllBookings().some(b => b.date === dateStr)) {
                     classes += ' booked';
                 }
 
@@ -1560,6 +1874,7 @@
             }
 
             applyTeamRestrictions();
+            resetFieldPortionInputs();
             dialogOverlay.classList.add('active');
             calculatePrice();
         }
@@ -1608,12 +1923,13 @@
 
         function hasDoubleBooking(newBooking) {
             const newRanges = getTimeRanges(newBooking.startTime, newBooking.endTime);
+            const newPortion = normalizeFieldPortion(newBooking);
+            const newFieldId = getBookingFieldId(newBooking);
 
             return getAllBookings().some(existingBooking => {
-                const sameDate = existingBooking.date === newBooking.date;
-                const sameField = existingBooking.fieldId === newBooking.fieldId;
-
-                if (!sameDate || !sameField) return false;
+                if (existingBooking.date !== newBooking.date) return false;
+                if (getBookingFieldId(existingBooking) !== newFieldId) return false;
+                if (!portionsConflict(newPortion, normalizeFieldPortion(existingBooking))) return false;
 
                 const existingRanges = getTimeRanges(existingBooking.startTime, existingBooking.endTime);
 
@@ -1638,6 +1954,7 @@
             if (multiDayInfo) multiDayInfo.textContent = '';
             updateCustomTeamVisibility();
             updateAllDayVisibility();
+            resetFieldPortionInputs();
             renderCalendar();
         });
 
@@ -1688,6 +2005,7 @@
             const isAdmin = currentUser && currentUser.role === 'Admin';
             const fieldText = fieldSelect.options[fieldSelect.selectedIndex].text;
             const fieldId = fieldSelect.value;
+            const fieldPortion = getSelectedFieldPortion();
 
             const newBookings = dateList.map((d, idx) => ({
                 id: Date.now() + idx,
@@ -1697,7 +2015,8 @@
                 team: teamValue,
                 startTime: startValue,
                 endTime: endValue,
-                allDay: !!isAllDay
+                allDay: !!isAllDay,
+                fieldPortion: fieldPortion
             }));
 
             const conflicts = newBookings.filter(b => hasDoubleBooking(b));
@@ -1736,6 +2055,7 @@
             if (multiDayInfo) multiDayInfo.textContent = '';
             updateCustomTeamVisibility();
             updateAllDayVisibility();
+            resetFieldPortionInputs();
         });
 
         // Vorheriger Monat
@@ -1785,27 +2105,48 @@
                 });
 
                 let bookingsHtml = '';
+                const hasAllDayBooking = fieldBookings.some(b => b.allDay && normalizeFieldPortion(b) === 'full');
                 fieldBookings.forEach(b => {
-                    if (!b.startTime || !b.endTime) return;
-                    const startMin = timeToMinutes(b.startTime);
-                    let endMin = timeToMinutes(b.endTime);
-                    if (endMin <= startMin) endMin = AVAIL_HOUR_END * 60;
+                    let left;
+                    let width;
+                    let timeLabel;
+                    const portion = normalizeFieldPortion(b);
 
-                    const startOffset = Math.max(0, startMin - AVAIL_HOUR_START * 60);
-                    const endOffset = Math.min(totalMinutes, endMin - AVAIL_HOUR_START * 60);
+                    if (b.allDay) {
+                        left = 0;
+                        width = 100;
+                        timeLabel = 'Ganzer Tag';
+                    } else {
+                        if (!b.startTime || !b.endTime) return;
+                        const startMin = timeToMinutes(b.startTime);
+                        let endMin = timeToMinutes(b.endTime);
+                        if (endMin <= startMin) endMin = AVAIL_HOUR_END * 60;
 
-                    if (endOffset <= 0 || startOffset >= totalMinutes) return;
+                        const startOffset = Math.max(0, startMin - AVAIL_HOUR_START * 60);
+                        const endOffset = Math.min(totalMinutes, endMin - AVAIL_HOUR_START * 60);
 
-                    const left = (startOffset / totalMinutes) * 100;
-                    const width = ((endOffset - startOffset) / totalMinutes) * 100;
-                    const timeLabel = b.allDay ? 'Ganzer Tag' : `${b.startTime}-${b.endTime}`;
+                        if (endOffset <= 0 || startOffset >= totalMinutes) return;
+
+                        left = (startOffset / totalMinutes) * 100;
+                        width = ((endOffset - startOffset) / totalMinutes) * 100;
+                        timeLabel = `${b.startTime}-${b.endTime}`;
+                    }
+
+                    const layout = applyPortionLayout(left, width, portion);
+                    left = layout.left;
+                    width = layout.width;
+
                     const teamLabel = b.team || 'Unbekannt';
-                    const cls = b.isFixedSeries ? 'availability-booking fixed-series' : 'availability-booking';
-                    const title = `${teamLabel} | ${timeLabel}`;
+                    let cls = 'availability-booking';
+                    if (b.isFixedSeries) cls += ' fixed-series';
+                    else if (b.allDay) cls += ' all-day';
+                    else if (portion !== 'full') cls += ' half-field';
+                    const portionLabel = portion !== 'full' ? ` · ${getFieldPortionLabel(portion)}` : '';
+                    const title = `${teamLabel} | ${timeLabel}${portionLabel}`;
 
                     bookingsHtml += `
                         <div class="${cls}" style="left:${left}%; width:${width}%;" title="${title.replace(/"/g, '&quot;')}">
-                            ${teamLabel} · ${timeLabel}
+                            ${teamLabel} · ${timeLabel}${portionLabel}
                         </div>
                     `;
                 });
@@ -1817,7 +2158,7 @@
                 html += `
                     <div class="availability-row">
                         <div class="availability-label">${field.label}</div>
-                        <div class="availability-track">
+                        <div class="availability-track${hasAllDayBooking ? ' has-all-day' : ''}">
                             <div class="availability-hours">${markersHtml}</div>
                             ${bookingsHtml}
                         </div>
@@ -1912,7 +2253,7 @@
                                 actionElement = `
                                     <span style="display:inline-flex; gap:0.4rem; align-items:center;">
                                         <span class="booking-fixed-badge">Serie</span>
-                                        <button class="booking-delete" onclick="deleteBooking('${booking.id}', true)">Löschen</button>
+                                        <button class="booking-delete" onclick="openSeriesDeleteDialog('${booking.id}')">Löschen</button>
                                     </span>
                                 `;
                             } else {
@@ -1926,15 +2267,20 @@
                             }
                         }
 
+                        const portion = normalizeFieldPortion(booking);
                         const timeDisplay = booking.allDay
                             ? '🕐 Ganzer Tag'
                             : `🕐 ${booking.startTime} - ${booking.endTime}`;
+                        const portionDisplay = portion !== 'full'
+                            ? `<p>📐 ${getFieldPortionLabel(portion)}</p>`
+                            : '';
 
                         html += `
-                            <div class="booking-item">
+                            <div class="booking-item${booking.allDay ? ' all-day' : ''}${portion !== 'full' ? ' half-field' : ''}">
                                 <div class="booking-info">
                                     <h4>⚽ ${booking.team || 'Keine Mannschaft'}</h4>
                                     <p>${timeDisplay}</p>
+                                    ${portionDisplay}
                                 </div>
                                 ${actionElement}
                             </div>
@@ -1957,6 +2303,191 @@
             });
         }
 
+        function getWeekdayNameFromDateStr(dateStr) {
+            const names = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+            const date = new Date(`${dateStr}T12:00:00`);
+            return names[date.getDay()];
+        }
+
+        function findSeriesDefinitionForBooking(booking) {
+            const dayName = getWeekdayNameFromDateStr(booking.date);
+            return FIXED_TRAINING_SERIES.find(series =>
+                series.team === booking.team &&
+                series.day === dayName &&
+                series.startTime === booking.startTime
+            ) || null;
+        }
+
+        function collectSeriesIdsInRange(seriesDef, fromStr, toStr) {
+            const from = new Date(`${fromStr}T12:00:00`);
+            const to = new Date(`${toStr}T12:00:00`);
+            if (from > to) return [];
+
+            const targetWeekday = DAY_TO_INDEX[seriesDef.day];
+            if (targetWeekday === undefined) return [];
+
+            const ids = [];
+            const dateCursor = new Date(from);
+            while (dateCursor.getDay() !== targetWeekday && dateCursor <= to) {
+                dateCursor.setDate(dateCursor.getDate() + 1);
+            }
+
+            while (dateCursor <= to) {
+                ids.push(`fixed-${seriesDef.team}-${seriesDef.day}-${formatDate(dateCursor)}-${seriesDef.startTime}`);
+                dateCursor.setDate(dateCursor.getDate() + 7);
+            }
+            return ids;
+        }
+
+        function refreshAfterSeriesChange() {
+            generateFixedSeriesBookings();
+            renderBookings();
+            renderCalendar();
+            renderAvailability();
+        }
+
+        let pendingSeriesDeleteId = null;
+        const seriesDeleteOverlay = document.getElementById('seriesDeleteOverlay');
+        const seriesDeleteInfo = document.getElementById('seriesDeleteInfo');
+        const seriesDeleteRange = document.getElementById('seriesDeleteRange');
+        const seriesDeleteFrom = document.getElementById('seriesDeleteFrom');
+        const seriesDeleteTo = document.getElementById('seriesDeleteTo');
+        const seriesDeleteCancelBtn = document.getElementById('seriesDeleteCancelBtn');
+        const seriesDeleteConfirmBtn = document.getElementById('seriesDeleteConfirmBtn');
+
+        function updateSeriesDeleteRangeVisibility() {
+            const mode = document.querySelector('input[name="seriesDeleteMode"]:checked');
+            if (seriesDeleteRange) {
+                seriesDeleteRange.classList.toggle('active', mode && mode.value === 'range');
+            }
+        }
+
+        document.querySelectorAll('input[name="seriesDeleteMode"]').forEach(input => {
+            input.addEventListener('change', updateSeriesDeleteRangeVisibility);
+        });
+
+        function closeSeriesDeleteDialog() {
+            pendingSeriesDeleteId = null;
+            if (seriesDeleteOverlay) seriesDeleteOverlay.classList.remove('active');
+        }
+
+        function openSeriesDeleteDialog(id) {
+            if (!currentUser) {
+                alert('Bitte zuerst einloggen.');
+                return;
+            }
+
+            const seriesBooking = fixedSeriesBookings.find(b => String(b.id) === String(id));
+            if (!seriesBooking) {
+                alert('Serien-Termin nicht gefunden.');
+                return;
+            }
+
+            const isAdmin = currentUser.role === 'Admin';
+            if (!isAdmin && seriesBooking.team !== currentUser.team) {
+                alert('Du kannst nur Serien-Termine deiner eigenen Mannschaft löschen.');
+                return;
+            }
+
+            pendingSeriesDeleteId = id;
+            const dateLabel = new Date(`${seriesBooking.date}T12:00:00`).toLocaleDateString('de-DE', {
+                weekday: 'long',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+            if (seriesDeleteInfo) {
+                seriesDeleteInfo.innerHTML = `
+                    <strong>${seriesBooking.team}</strong><br>
+                    ${dateLabel}<br>
+                    ${seriesBooking.startTime} – ${seriesBooking.endTime} Uhr · ${seriesBooking.field}
+                `;
+            }
+
+            const singleMode = document.querySelector('input[name="seriesDeleteMode"][value="single"]');
+            if (singleMode) singleMode.checked = true;
+            if (seriesDeleteFrom) seriesDeleteFrom.value = seriesBooking.date;
+            if (seriesDeleteTo) seriesDeleteTo.value = seriesBooking.date;
+            updateSeriesDeleteRangeVisibility();
+            if (seriesDeleteOverlay) seriesDeleteOverlay.classList.add('active');
+        }
+
+        function confirmSeriesDelete() {
+            if (!pendingSeriesDeleteId) return;
+
+            const seriesBooking = fixedSeriesBookings.find(b => String(b.id) === String(pendingSeriesDeleteId));
+            if (!seriesBooking) {
+                alert('Serien-Termin nicht gefunden.');
+                closeSeriesDeleteDialog();
+                return;
+            }
+
+            const mode = document.querySelector('input[name="seriesDeleteMode"]:checked');
+            const deleteMode = mode ? mode.value : 'single';
+
+            if (deleteMode === 'single') {
+                if (!confirm('Diesen Serien-Termin wirklich entfernen?\n(Nur dieser einzelne Termin wird gelöscht.)')) {
+                    return;
+                }
+                const deletedIds = getDeletedSeriesIds();
+                if (!deletedIds.includes(pendingSeriesDeleteId)) {
+                    deletedIds.push(pendingSeriesDeleteId);
+                    saveDeletedSeriesIds(deletedIds);
+                }
+                closeSeriesDeleteDialog();
+                refreshAfterSeriesChange();
+                return;
+            }
+
+            const fromStr = seriesDeleteFrom ? seriesDeleteFrom.value : '';
+            const toStr = seriesDeleteTo ? seriesDeleteTo.value : '';
+            if (!fromStr || !toStr) {
+                alert('Bitte Von- und Bis-Datum angeben.');
+                return;
+            }
+            if (fromStr > toStr) {
+                alert('Das Von-Datum darf nicht nach dem Bis-Datum liegen.');
+                return;
+            }
+
+            const seriesDef = findSeriesDefinitionForBooking(seriesBooking);
+            if (!seriesDef) {
+                alert('Serien-Definition nicht gefunden.');
+                return;
+            }
+
+            const idsToDelete = collectSeriesIdsInRange(seriesDef, fromStr, toStr);
+            if (idsToDelete.length === 0) {
+                alert('Im gewählten Zeitraum gibt es keine passenden Serien-Termine.');
+                return;
+            }
+
+            const fromLabel = new Date(`${fromStr}T12:00:00`).toLocaleDateString('de-DE');
+            const toLabel = new Date(`${toStr}T12:00:00`).toLocaleDateString('de-DE');
+            if (!confirm(`${idsToDelete.length} Serien-Termin(e) für ${seriesDef.team} (${seriesDef.day}, ${seriesDef.startTime} Uhr)\nvom ${fromLabel} bis ${toLabel} wirklich löschen?`)) {
+                return;
+            }
+
+            const deletedIds = getDeletedSeriesIds();
+            idsToDelete.forEach(seriesId => {
+                if (!deletedIds.includes(seriesId)) {
+                    deletedIds.push(seriesId);
+                }
+            });
+            saveDeletedSeriesIds(deletedIds);
+            closeSeriesDeleteDialog();
+            refreshAfterSeriesChange();
+        }
+
+        if (seriesDeleteCancelBtn) seriesDeleteCancelBtn.addEventListener('click', closeSeriesDeleteDialog);
+        if (seriesDeleteConfirmBtn) seriesDeleteConfirmBtn.addEventListener('click', confirmSeriesDelete);
+        if (seriesDeleteOverlay) {
+            seriesDeleteOverlay.addEventListener('click', (e) => {
+                if (e.target === seriesDeleteOverlay) closeSeriesDeleteDialog();
+            });
+        }
+
         // Buchung löschen
         function deleteBooking(id, isFixedSeries) {
             if (!currentUser) {
@@ -1966,27 +2497,7 @@
             const isAdmin = currentUser.role === 'Admin';
 
             if (isFixedSeries) {
-                const seriesBooking = fixedSeriesBookings.find(b => String(b.id) === String(id));
-                if (!seriesBooking) {
-                    alert('Serien-Termin nicht gefunden.');
-                    return;
-                }
-                if (!isAdmin && seriesBooking.team !== currentUser.team) {
-                    alert('Du kannst nur Serien-Termine deiner eigenen Mannschaft löschen.');
-                    return;
-                }
-                if (!confirm('Diesen Serien-Termin wirklich entfernen?\n(Nur dieser einzelne Termin wird gelöscht.)')) {
-                    return;
-                }
-                const deletedIds = getDeletedSeriesIds();
-                if (!deletedIds.includes(id)) {
-                    deletedIds.push(id);
-                    saveDeletedSeriesIds(deletedIds);
-                }
-                generateFixedSeriesBookings();
-                renderBookings();
-                renderCalendar();
-                renderAvailability();
+                openSeriesDeleteDialog(id);
                 return;
             }
 

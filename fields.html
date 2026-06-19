@@ -602,24 +602,30 @@
         });
 
         const FIXED_YOUTH_TRAININGS = [
-            { team: 'Bambini', day: 'Freitag', startTime: '17:00', endTime: '18:00', field: 'Platz 1' },
-            { team: 'F-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 1' },
-            { team: 'E-Jugend', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 2' },
-            { team: 'E-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 2' },
-            { team: 'D-Jugend', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
-            { team: 'D-Jugend', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)' },
-            { team: 'C-Jugend', day: 'Montag', startTime: '18:00', endTime: '19:30', field: 'Platz 2' },
-            { team: 'C-Jugend', day: 'Donnerstag', startTime: '17:00', endTime: '18:30', field: 'Platz 3' },
-            { team: 'B-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },
-            { team: 'B-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim' },
-            { team: 'A-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3' },
-            { team: 'A-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim' },
-            { team: 'Aktive 1', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
-            { team: 'Aktive 1', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)' },
-            { team: 'Aktive 2', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
-            { team: 'Aktive 2', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2' },
-            { team: 'AH', day: 'Freitag', startTime: '18', endTime: '19:30', field: 'Platz 1' }
+            { team: 'Bambini', day: 'Freitag', startTime: '17:00', endTime: '18:00', field: 'Platz 1', fieldPortion: 'half2' },
+            { team: 'F-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 1', fieldPortion: 'half1' },
+            { team: 'E-Jugend', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'E-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'D-Jugend', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'full' },
+            { team: 'D-Jugend', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'full' },
+            { team: 'C-Jugend', day: 'Montag', startTime: '18:00', endTime: '19:30', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'C-Jugend', day: 'Donnerstag', startTime: '17:00', endTime: '18:30', field: 'Platz 3', fieldPortion: 'full' },
+            { team: 'B-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3', fieldPortion: 'half1' },
+            { team: 'B-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'half1' },
+            { team: 'A-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3', fieldPortion: 'half2' },
+            { team: 'A-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'half2' },
+            { team: 'Aktive 1', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)', fieldPortion: 'full' },
+            { team: 'Aktive 1', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)', fieldPortion: 'full' },
+            { team: 'Aktive 2', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'Aktive 2', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2', fieldPortion: 'full' },
+            { team: 'AH', day: 'Freitag', startTime: '18:00', endTime: '19:30', field: 'Platz 1', fieldPortion: 'half1' }
         ];
+
+        function getFieldPortionLabel(portion) {
+            if (portion === 'half1') return 'Halber Platz (1. Hälfte)';
+            if (portion === 'half2') return 'Halber Platz (2. Hälfte)';
+            return 'Ganzer Platz';
+        }
 
         function formatOverviewDate(dateStr) {
             const date = new Date(dateStr);
@@ -686,7 +692,8 @@
                 `;
 
                 groupedByTeam[team].forEach((entry) => {
-                    html += `<p>${entry.day}, ${entry.startTime} - ${entry.endTime} Uhr | ${entry.field || 'Platz nicht gesetzt'}</p>`;
+                    const portionLabel = getFieldPortionLabel(entry.fieldPortion || 'full');
+                    html += `<p>${entry.day}, ${entry.startTime} - ${entry.endTime} Uhr | ${entry.field || 'Platz nicht gesetzt'} · ${portionLabel}</p>`;
                 });
 
                 html += '</div>';
@@ -727,10 +734,11 @@
                 `;
 
                 grouped[dateKey].forEach((booking) => {
+                    const portionLabel = getFieldPortionLabel(booking.fieldPortion || 'full');
                     html += `
                         <div class="overview-item">
                             <strong>${booking.startTime} - ${booking.endTime}</strong>
-                            <p>${booking.field} | Mannschaft: ${booking.team || 'Keine Angabe'}</p>
+                            <p>${booking.field} | Mannschaft: ${booking.team || 'Keine Angabe'} · ${portionLabel}</p>
                         </div>
                     `;
                 });

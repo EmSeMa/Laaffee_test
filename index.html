@@ -222,320 +222,6 @@
             color: #666;
         }
 
-        /* Austausch / Chat Bereich */
-        .chat-section {
-            background: #f8f9fa;
-            padding: 4rem 2rem;
-            margin: 4rem 0;
-        }
-
-        .chat-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .chat-section h2 {
-            text-align: center;
-            font-size: 2.5rem;
-            color: #000000;
-            margin-bottom: 0.5rem;
-        }
-
-        .chat-intro {
-            text-align: center;
-            color: #666;
-            margin-bottom: 2rem;
-        }
-
-        .chat-box {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 14px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            min-height: 500px;
-        }
-
-        .chat-header {
-            background: linear-gradient(135deg, #000000 0%, #333333 100%);
-            color: white;
-            padding: 1rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .chat-header-title {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
-        .chat-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            opacity: 0.9;
-        }
-
-        .chat-status .online-dot {
-            width: 10px;
-            height: 10px;
-            background: #2ecc71;
-            border-radius: 50%;
-            box-shadow: 0 0 8px rgba(46, 204, 113, 0.7);
-        }
-
-        .chat-user-info {
-            font-size: 0.85rem;
-            opacity: 0.95;
-        }
-
-        .chat-logout {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
-            padding: 0.3rem 0.7rem;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: background 0.3s;
-        }
-
-        .chat-logout:hover {
-            background: rgba(255, 255, 255, 0.25);
-        }
-
-        .chat-messages {
-            flex: 1;
-            padding: 1.5rem;
-            overflow-y: auto;
-            max-height: 450px;
-            background: #fafafa;
-            display: flex;
-            flex-direction: column;
-            gap: 0.9rem;
-        }
-
-        .chat-empty {
-            text-align: center;
-            color: #999;
-            font-style: italic;
-            margin: auto 0;
-        }
-
-        .chat-message {
-            display: flex;
-            gap: 0.7rem;
-            align-items: flex-start;
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .chat-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #000000 0%, #444 100%);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            flex-shrink: 0;
-            font-size: 0.9rem;
-        }
-
-        .chat-message.own .chat-avatar {
-            background: linear-gradient(135deg, #1a7f3c 0%, #2ecc71 100%);
-        }
-
-        .chat-bubble {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            padding: 0.7rem 1rem;
-            max-width: 75%;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-
-        .chat-message.own {
-            flex-direction: row-reverse;
-        }
-
-        .chat-message.own .chat-bubble {
-            background: #e8f5ed;
-            border-color: #c8e6d2;
-        }
-
-        .chat-bubble-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 0.8rem;
-            margin-bottom: 0.2rem;
-        }
-
-        .chat-bubble-name {
-            font-weight: 600;
-            color: #000;
-            font-size: 0.9rem;
-        }
-
-        .chat-bubble-time {
-            color: #888;
-            font-size: 0.75rem;
-        }
-
-        .chat-bubble-text {
-            color: #333;
-            font-size: 0.95rem;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .chat-delete {
-            background: transparent;
-            border: none;
-            color: #c0392b;
-            cursor: pointer;
-            font-size: 0.75rem;
-            margin-top: 0.3rem;
-            padding: 0;
-            opacity: 0.7;
-        }
-
-        .chat-delete:hover {
-            opacity: 1;
-            text-decoration: underline;
-        }
-
-        .chat-input-area {
-            padding: 1rem;
-            border-top: 1px solid #e9ecef;
-            background: #ffffff;
-            display: flex;
-            gap: 0.6rem;
-        }
-
-        .chat-input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-family: inherit;
-            resize: none;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .chat-input:focus {
-            border-color: #000000;
-        }
-
-        .chat-send-btn {
-            background: linear-gradient(135deg, #000000 0%, #333 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0 1.4rem;
-            cursor: pointer;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
-            white-space: nowrap;
-        }
-
-        .chat-send-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-        }
-
-        .chat-send-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Login Bereich */
-        .chat-login {
-            padding: 3rem 2rem;
-            text-align: center;
-        }
-
-        .chat-login h3 {
-            color: #000;
-            margin-bottom: 0.5rem;
-            font-size: 1.4rem;
-        }
-
-        .chat-login p {
-            color: #666;
-            margin-bottom: 1.5rem;
-        }
-
-        .chat-login-form {
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-            max-width: 360px;
-            margin: 0 auto;
-        }
-
-        .chat-login-form input {
-            padding: 0.75rem 1rem;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-family: inherit;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .chat-login-form input:focus {
-            border-color: #000;
-        }
-
-        .chat-login-form button {
-            background: linear-gradient(135deg, #000 0%, #333 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 0.8rem 1rem;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .chat-login-form button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-        }
-
-        .chat-login-error {
-            color: #c0392b;
-            font-size: 0.85rem;
-            min-height: 1.1rem;
-        }
-
-        .chat-hint {
-            text-align: center;
-            color: #888;
-            font-size: 0.8rem;
-            margin-top: 0.8rem;
-        }
-
         .contacts {
             max-width: 1200px;
             margin: 4rem auto;
@@ -589,7 +275,7 @@
 
         .contact-avatar {
             width: 150px;
-            height: 150px;
+            height: 180px;
             border-radius: 50%;
             background: linear-gradient(135deg, #000000 0%, #333333 100%);
             color: white;
@@ -607,8 +293,10 @@
             position: absolute;
             inset: 0;
             width: 100%;
-            height: 100%;
+            height: 115%;
+            top: -8%;
             object-fit: cover;
+            object-position: center 22%;
             display: block;
             image-rendering: auto;
             image-rendering: high-quality;
@@ -827,15 +515,6 @@
                 align-items: stretch;
             }
 
-            .chat-bubble {
-                max-width: 85%;
-            }
-
-            .chat-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
             .contacts-grid {
                 grid-template-columns: 1fr;
             }
@@ -861,7 +540,6 @@
             </a>
             <ul class="nav-links">
                 <li><a href="#features">Funktionen</a></li>
-                <li><a href="#austausch">Austausch</a></li>
                 <li><a href="#contacts">Ansprechpartner</a></li>
                 <li><a href="#downloads">Downloads</a></li>
                 <li><a href="https://team.jako.com/de-de/team/sportfreunde_lauffen_jugend/">SFL-Shop Jugend</a></li>
@@ -906,66 +584,14 @@
                 <h3>Benutzerverwaltung</h3>
                 <p>Sichere Authentifizierung mit JWT. Admin- und Benutzerrollen für granulare Kontrolle.</p>
             </a>
-            <a href="analytics.html" class="feature-card">
+            <a href="analytics.html" class="feature-card" id="analyticsCard" hidden>
                 <div class="feature-icon">📊</div>
                 <h3>Analytics & Berichte</h3>
-                <p>Detaillierte Statistiken über Auslastung, Einnahmen und Wartungskosten.</p>
-            </a>
-            <a href="#features" class="feature-card">
-                <div class="feature-icon">📱</div>
-                <h3>Plattformübergreifend</h3>
-                <p>iOS, Android, Web - eine App für alle Geräte mit React Native.</p>
-            </a>
+                <p>Detaillierte Statistiken über Auslastung und Nutzung.</p>
+            </a>            
             </div>
         </section>
     </div>
-
-    <!-- Austausch / Chat Section -->
-    <section class="chat-section" id="austausch">
-        <div class="chat-container">
-            <h2>💬 Austausch</h2>
-            <p class="chat-intro">Tausche dich mit anderen Vereinsfunktionären der Sportfreunde Lauffen aus. Nach dem Login kannst du Nachrichten schreiben.</p>
-
-            <div class="chat-box">
-                <!-- Login Bereich (sichtbar wenn nicht eingeloggt) -->
-                <div id="chatLogin" class="chat-login">
-                    <h3>🔐 Anmeldung</h3>
-                    <p>Bitte gib deinen Namen ein, um am Austausch teilzunehmen.</p>
-                    <form id="loginForm" class="chat-login-form" autocomplete="off">
-                        <input type="text" id="loginName" placeholder="Dein Name" maxlength="40" required>
-                        <input type="password" id="loginPassword" placeholder="Vereinspasswort" maxlength="40" required>
-                        <button type="submit">Anmelden &amp; Chatten</button>
-                        <div id="loginError" class="chat-login-error"></div>
-                    </form>
-                    <div class="chat-hint">Hinweis: Das Vereinspasswort lautet <strong>sfl1920</strong></div>
-                </div>
-
-                <!-- Chat Bereich (sichtbar nach Login) -->
-                <div id="chatArea" style="display: none; flex-direction: column; flex: 1;">
-                    <div class="chat-header">
-                        <div class="chat-header-title">
-                            <span>💬</span>
-                            <span>Vereinschat</span>
-                        </div>
-                        <div class="chat-status">
-                            <span class="online-dot"></span>
-                            <span class="chat-user-info">Angemeldet als <strong id="currentUserName">...</strong></span>
-                            <button id="logoutBtn" class="chat-logout">Abmelden</button>
-                        </div>
-                    </div>
-
-                    <div id="chatMessages" class="chat-messages">
-                        <div class="chat-empty">Noch keine Nachrichten. Schreib die erste!</div>
-                    </div>
-
-                    <form id="chatForm" class="chat-input-area" autocomplete="off">
-                        <textarea id="chatInput" class="chat-input" placeholder="Nachricht schreiben... (Enter zum Senden)" rows="1" maxlength="500"></textarea>
-                        <button type="submit" class="chat-send-btn" id="sendBtn">Senden</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Ansprechpartner Section -->
     <section class="contacts" id="contacts">
@@ -983,7 +609,6 @@
                 <div class="contact-function">Funktion: 1. Vorsitzender</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:jugend@sportfreunde-lauffen.de">jugendleitung@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)</a></p>
                 </div>
             </div>
 
@@ -997,7 +622,6 @@
                 <div class="contact-function">Funktion: Abteilungsleiter Aktive</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:aktive@sportfreunde-lauffen.de">aktive@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
 
@@ -1011,7 +635,6 @@
                 <div class="contact-function">Funktion: Jugendleiter</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:platzwart@sportfreunde-lauffen.de">platzwart@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
             <div class="contact-card">
@@ -1024,7 +647,6 @@
                 <div class="contact-function">Funktion: Platzwart/techn. Leiter</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:jugend@sportfreunde-lauffen.de">ah@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)00000000</a></p>
                 </div>
             </div>  
             <div class="contact-card">
@@ -1037,7 +659,6 @@
                 <div class="contact-function">Funktion: Abteilungsleiter AH</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:vorstand@sportfreunde-lauffen.de">vorstand@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
 
@@ -1052,7 +673,6 @@
                 <div class="contact-function">Funktion: 2. Vorsitzender</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:vorstand2@sportfreunde-lauffen.de">vorstand@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
 
@@ -1066,7 +686,6 @@
                 <div class="contact-function">Funktion: Stellv. Abteilungsleiter Aktiv</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:kasse@sportfreunde-lauffen.de">aktive@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
 
@@ -1080,7 +699,6 @@
                 <div class="contact-function">Funktion: Stellv. Jugendleiter</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:schriftfuehrer@sportfreunde-lauffen.de">jugendleitung@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
 
@@ -1094,7 +712,6 @@
                 <div class="contact-function">Funktion: Stellv. Techn. Leiter</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:damen@sportfreunde-lauffen.de">platzwart@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
 
@@ -1108,7 +725,6 @@
                 <div class="contact-function">Funktion: Sponsoring &amp; Marketing</div>
                 <div class="contact-details">
                     <p>📧 <a href="mailto:events@sportfreunde-lauffen.de">vorstand@sportfreunde-lauffen.de</a></p>
-                    <p>📞 <a href="tel:+490000000000">+49 (0)000 000000</a></p>
                 </div>
             </div>
         </div>
@@ -1191,6 +807,30 @@
                         <span class="download-action">↓ Herunterladen</span>
                     </div>
                 </a>
+
+                <a href="assets/downloads/AntragerstmaligeSpielerlaubnisbeschreibbar.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">📄</div>
+                        <h3 class="download-title">Antrag erstmalig</h3>
+                    </div>
+                    <p class="download-description">Formular für die erstmalige Antragstellung beim Verein.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
+
+                <a href="assets/downloads/150113EndfassungMinderjhrigezurVerwendungLV.pdf" class="download-card" download>
+                    <div class="download-card-header">
+                        <div class="download-icon">📑</div>
+                        <h3 class="download-title">Einwilligungserklärung Minderjährige </h3>
+                    </div>
+                    <p class="download-description">Formular für die Einwilligungserklärung der Minderjährigen zur Verwendung des Vereinslebensversicherungsvertrags.</p>
+                    <div class="download-meta">
+                        <span class="download-badge">PDF</span>
+                        <span class="download-action">↓ Herunterladen</span>
+                    </div>
+                </a>
             </div>
         </div>
     </section>
@@ -1205,7 +845,6 @@
             <div class="footer-links">
                 <a href="#home">Home</a>
                 <a href="#features">Features</a>
-                <a href="#austausch">Austausch</a>
                 <a href="#contacts">Ansprechpartner</a>
                 <a href="#downloads">Downloads</a>
                 <a href="#contacts">Kontakt</a>
@@ -1237,187 +876,33 @@
             });
         }
 
-        // ============================
-        // Chat / Austausch Funktionalität
-        // ============================
-        (function() {
-            const CLUB_PASSWORD = 'sfl1920';
-            const STORAGE_MESSAGES = 'sfl_chat_messages';
-            const STORAGE_USER = 'sfl_chat_user';
+        (function () {
+            const SESSION_KEY = 'currentUserId';
+            const USERS_STORAGE_KEY = 'youthCoaches';
 
-            const chatLogin = document.getElementById('chatLogin');
-            const chatArea = document.getElementById('chatArea');
-            const loginForm = document.getElementById('loginForm');
-            const loginName = document.getElementById('loginName');
-            const loginPassword = document.getElementById('loginPassword');
-            const loginError = document.getElementById('loginError');
-            const currentUserName = document.getElementById('currentUserName');
-            const logoutBtn = document.getElementById('logoutBtn');
-            const chatMessages = document.getElementById('chatMessages');
-            const chatForm = document.getElementById('chatForm');
-            const chatInput = document.getElementById('chatInput');
-            const sendBtn = document.getElementById('sendBtn');
-
-            let currentUser = null;
-
-            function loadMessages() {
+            function isAdminUser() {
                 try {
-                    const raw = localStorage.getItem(STORAGE_MESSAGES);
-                    if (!raw) return [];
-                    const parsed = JSON.parse(raw);
-                    return Array.isArray(parsed) ? parsed : [];
+                    const id = sessionStorage.getItem(SESSION_KEY);
+                    if (!id) return false;
+                    const stored = localStorage.getItem(USERS_STORAGE_KEY);
+                    if (!stored) return false;
+                    const list = JSON.parse(stored);
+                    if (!Array.isArray(list)) return false;
+                    const user = list.find(u => String(u.id) === String(id) && u.status === 'active');
+                    return !!(user && user.role === 'Admin');
                 } catch (e) {
-                    return [];
+                    return false;
                 }
             }
 
-            function saveMessages(messages) {
-                if (window.SFL) {
-                    window.SFL.save(STORAGE_MESSAGES, messages);
-                } else {
-                    localStorage.setItem(STORAGE_MESSAGES, JSON.stringify(messages));
-                }
+            function updateAnalyticsCard() {
+                const card = document.getElementById('analyticsCard');
+                if (!card) return;
+                card.hidden = !isAdminUser();
             }
 
-            if (window.SFL) {
-                window.SFL.subscribe(STORAGE_MESSAGES, () => {
-                    if (currentUser) renderMessages();
-                });
-            }
-
-            function getInitials(name) {
-                return name.trim().split(/\s+/).map(n => n[0]).join('').toUpperCase().slice(0, 2);
-            }
-
-            function formatTime(timestamp) {
-                const d = new Date(timestamp);
-                const today = new Date();
-                const isToday = d.toDateString() === today.toDateString();
-                const time = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-                if (isToday) return `Heute, ${time}`;
-                const date = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                return `${date}, ${time}`;
-            }
-
-            function escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            }
-
-            function renderMessages() {
-                const messages = loadMessages();
-                if (messages.length === 0) {
-                    chatMessages.innerHTML = '<div class="chat-empty">Noch keine Nachrichten. Schreib die erste!</div>';
-                    return;
-                }
-                chatMessages.innerHTML = messages.map(msg => {
-                    const isOwn = currentUser && msg.user === currentUser;
-                    return `
-                        <div class="chat-message ${isOwn ? 'own' : ''}">
-                            <div class="chat-avatar">${escapeHtml(getInitials(msg.user))}</div>
-                            <div class="chat-bubble">
-                                <div class="chat-bubble-meta">
-                                    <span class="chat-bubble-name">${escapeHtml(msg.user)}</span>
-                                    <span class="chat-bubble-time">${formatTime(msg.timestamp)}</span>
-                                </div>
-                                <div class="chat-bubble-text">${escapeHtml(msg.text)}</div>
-                                ${isOwn ? `<button class="chat-delete" data-id="${msg.id}">Löschen</button>` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-
-                chatMessages.querySelectorAll('.chat-delete').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const id = btn.getAttribute('data-id');
-                        if (confirm('Nachricht wirklich löschen?')) {
-                            const updated = loadMessages().filter(m => String(m.id) !== String(id));
-                            saveMessages(updated);
-                            renderMessages();
-                        }
-                    });
-                });
-            }
-
-            function showChat(user) {
-                currentUser = user;
-                currentUserName.textContent = user;
-                chatLogin.style.display = 'none';
-                chatArea.style.display = 'flex';
-                renderMessages();
-            }
-
-            function showLogin() {
-                currentUser = null;
-                chatArea.style.display = 'none';
-                chatLogin.style.display = 'block';
-                loginName.value = '';
-                loginPassword.value = '';
-                loginError.textContent = '';
-            }
-
-            const savedUser = localStorage.getItem(STORAGE_USER);
-            if (savedUser) {
-                showChat(savedUser);
-            }
-
-            loginForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const name = loginName.value.trim();
-                const password = loginPassword.value;
-                if (!name) {
-                    loginError.textContent = 'Bitte gib deinen Namen ein.';
-                    return;
-                }
-                if (password !== CLUB_PASSWORD) {
-                    loginError.textContent = 'Falsches Vereinspasswort.';
-                    return;
-                }
-                localStorage.setItem(STORAGE_USER, name);
-                showChat(name);
-            });
-
-            logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem(STORAGE_USER);
-                showLogin();
-            });
-
-            chatForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const text = chatInput.value.trim();
-                if (!text || !currentUser) return;
-                const messages = loadMessages();
-                messages.push({
-                    id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
-                    user: currentUser,
-                    text: text,
-                    timestamp: Date.now()
-                });
-                saveMessages(messages);
-                chatInput.value = '';
-                chatInput.style.height = 'auto';
-                renderMessages();
-            });
-
-            chatInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    chatForm.requestSubmit();
-                }
-            });
-
-            chatInput.addEventListener('input', () => {
-                chatInput.style.height = 'auto';
-                chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
-            });
-
-            window.addEventListener('storage', (e) => {
-                if (e.key === STORAGE_MESSAGES && currentUser) {
-                    renderMessages();
-                }
-            });
+            updateAnalyticsCard();
+            window.addEventListener('storage', updateAnalyticsCard);
         })();
 
     </script>

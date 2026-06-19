@@ -42,12 +42,6 @@
       "short_name": "Bus",
       "url": "./bus-booking.html",
       "icons": [{ "src": "assets/logo.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Austausch / Chat",
-      "short_name": "Chat",
-      "url": "./index.html#austausch",
-      "icons": [{ "src": "assets/logo.png", "sizes": "192x192" }]
     }
   ]
 }

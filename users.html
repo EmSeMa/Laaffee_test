@@ -474,7 +474,7 @@
                 <h2>Trainer &amp; Verantwortliche</h2>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
                     <input type="search" id="searchInput" placeholder="🔍 Suche nach Name, Mannschaft …">
-                    <button class="add-user-btn" id="addUserBtn">+ Benutzer hinzufügen</button>
+                    <button class="add-user-btn" id="addUserBtn" hidden>+ Benutzer hinzufügen</button>
                 </div>
             </div>
 
@@ -595,10 +595,10 @@
             { id: 7, name: 'Trainer 1 A-Jugend', team: 'A-Jugend', role: 'Trainer', email: 'ajugend1@sportfreunde-lauffen.de', phone: '', code: '1007', status: 'active' },
             { id: 27, name: 'Trainer 2 A-Jugend', team: 'A-Jugend', role: 'Trainer', email: 'ajugend2@sportfreunde-lauffen.de', phone: '', code: '1027', status: 'active' },
 
-            { id: 8, name: 'Emanuel Massa', team: 'Verein', role: 'Admin', email: 'jugendleitung@sportfreunde-lauffen.de', phone: '', code: '0807', status: 'active' },
+            { id: 8, name: 'Emanuel Massa', team: 'Verein', role: 'Admin', email: 'jugendleitung@sportfreunde-lauffen.de', phone: '', code: '2001', status: 'active' },
             { id: 9, name: 'Marco Mayer', team: 'Aktive 1', role: 'Abteilungsleiter', email: 'aktive@sportfreunde-lauffen.de', phone: '', code: '2002', status: 'active' },
             { id: 10, name: 'Rainer Himmelsbach', team: 'AH', role: 'Abteilungsleiter', email: 'ah@sportfreunde-lauffen.de', phone: '', code: '2003', status: 'active' },
-            { id: 11, name: 'Markus Schiefer', team: 'Verein', role: 'Admin', email: 'platzwart@sportfreunde-lauffen.de', phone: '', code: '9999', status: 'active' },
+            { id: 11, name: 'Markus Schiefer', team: 'Verein', role: 'Admin', email: 'vorstand@sportfreunde-lauffen.de', phone: '', code: '9999', status: 'active' },
             { id: 12, name: 'Lukas Losch', team: 'Verein', role: 'Admin', email: 'vorstand@sportfreunde-lauffen.de', phone: '', code: '9998', status: 'active' }
         ];
 
@@ -632,6 +632,10 @@
             const id = sessionStorage.getItem(SESSION_KEY);
             if (!id) return null;
             return users.find(u => String(u.id) === String(id)) || null;
+        }
+
+        function isAdminUser() {
+            return !!(currentUser && currentUser.role === 'Admin');
         }
 
         function renderLoginBar() {
@@ -771,7 +775,7 @@
 
             const sorted = [...filtered].sort((a, b) => a.team.localeCompare(b.team) || a.name.localeCompare(b.name));
 
-            const viewerIsAdmin = !!currentUser && currentUser.role === 'Admin';
+            const viewerIsAdmin = isAdminUser();
 
             let html = '';
             sorted.forEach(user => {
@@ -821,6 +825,10 @@
         }
 
         function openAddDialog() {
+            if (!isAdminUser()) {
+                alert('Nur ein Admin darf Benutzer hinzufügen.');
+                return;
+            }
             editingId = null;
             dialogTitle.textContent = 'Benutzer hinzufügen';
             userName.value = '';
@@ -837,7 +845,7 @@
             const user = users.find(u => u.id === id);
             if (!user) return;
 
-            const viewerIsAdmin = !!currentUser && currentUser.role === 'Admin';
+            const viewerIsAdmin = isAdminUser();
             const isOwnProfile = currentUser && currentUser.id === user.id;
             if (!viewerIsAdmin && !isOwnProfile) {
                 alert('Du kannst nur dein eigenes Profil bearbeiten.');
@@ -908,7 +916,7 @@
                 status: userStatus.value
             };
 
-            const viewerIsAdmin = !!currentUser && currentUser.role === 'Admin';
+            const viewerIsAdmin = isAdminUser();
 
             if (editingId === null) {
                 if (!viewerIsAdmin) {
@@ -943,8 +951,7 @@
         }
 
         function deleteUser(id) {
-            const viewerIsAdmin = !!currentUser && currentUser.role === 'Admin';
-            if (!viewerIsAdmin) {
+            if (!isAdminUser()) {
                 alert('Nur ein Admin darf Benutzer löschen.');
                 return;
             }
