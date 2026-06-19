@@ -789,6 +789,30 @@
             opacity: 0.8;
         }
 
+        .footer-creator {
+            margin-top: 1rem;
+            opacity: 0.75;
+            font-size: 0.9rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-brand h2 {
+            margin: 0;
+        }
+
+        .footer-logo {
+            height: 48px;
+            width: auto;
+            display: block;
+        }
+
         @media (max-width: 768px) {
             .nav-links {
                 display: none;
@@ -1144,17 +1168,14 @@
                     </div>
                 </a>
 
-                <a href="https://www.fussball.de/verein/spfr-lauffen-wuerttemberg/-/id/00ES8GNAVO00005IVV0AG08LVUPGND5I#!/"
-                   class="download-card"
-                   target="_blank"
-                   rel="noopener noreferrer">
+                <a href="assets/downloads/nutzungsordnung-bus.pdf" class="download-card" target="_blank" rel="noopener noreferrer">
                     <div class="download-card-header">
-                        <div class="download-icon">⚽</div>
-                        <h3 class="download-title">Spielplan</h3>
+                        <div class="download-icon">🚌</div>
+                        <h3 class="download-title">Nutzungsordnung des Busses</h3>
                     </div>
-                    <p class="download-description">Aktueller Spielplan der Aktiven und Jugendmannschaften</p>
+                    <p class="download-description">Regeln und Hinweise zur Nutzung des Vereinsbusses</p>
                     <div class="download-meta">
-                        <span class="download-badge">ONLINE</span>
+                        <span class="download-badge">PDF</span>
                         <span class="download-action">→ Öffnen</span>
                     </div>
                 </a>
@@ -1177,18 +1198,21 @@
     <!-- Footer -->
     <footer class="footer" id="contact">
         <div class="footer-content">
-            <h2 style="margin-bottom: 2rem;">⚽ Sportplatz Manager</h2>
+            <div class="footer-brand">
+                <img src="assets/SFLlogo.png" alt="SFL Logo" class="footer-logo" onerror="this.onerror=null;this.src='assets/logo.png';">
+                <h2>Ulrichsheide Manager</h2>
+            </div>
             <div class="footer-links">
                 <a href="#home">Home</a>
                 <a href="#features">Features</a>
                 <a href="#austausch">Austausch</a>
                 <a href="#contacts">Ansprechpartner</a>
                 <a href="#downloads">Downloads</a>
-                <a href="mailto:info@sportplatz-manager.de">Kontakt</a>
+                <a href="#contacts">Kontakt</a>
                 <a href="#privacy">Datenschutz</a>
             </div>
-            <p>&copy; 2026 Sportplatz Manager. Alle Rechte vorbehalten.</p>
-            <p style="margin-top: 1rem; opacity: 0.7;">📧 info@sportplatz-manager.de | 📞 +49 (0)123 456789</p>
+            <p>&copy; 2026 Sportfreunde Lauffen &ndash; Ulrichsheide Manager. Alle Rechte vorbehalten.</p>
+            <p class="footer-creator">Erstellt von Emanuel Massa</p>
         </div>
     </footer>
 
