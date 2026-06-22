@@ -46,11 +46,36 @@ Das ist der wichtigste Schritt — **ohne den ist der Schutz nicht echt!**
    ```json
    {
      "rules": {
-       ".read": "auth != null",
-       ".write": "auth != null"
+       ".read": false,
+       ".write": false,
+       "bookings": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       },
+       "busBookings": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       },
+       "users": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       },
+       "deletedSeries": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       },
+       "customFields": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       }
      }
    }
    ```
+
+   > Hinweis: In der **Realtime Database** gibt es keine Methode `isArray()`. Arrays aus der App werden als Objekte mit Schlüsseln `0`, `1`, `2` … gespeichert. Die Regeln oben sind für eure App (`firebase-sync.js`) korrekt.
+
+   Optional strenger (nur euer Vereins-Account):
+   `"auth != null && auth.token.email === 'verein@sfl-lauffen.de'"` statt nur `"auth != null"`.
 
 4. **„Publish"** klicken.
 

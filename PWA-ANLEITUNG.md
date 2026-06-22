@@ -108,15 +108,33 @@ Standardmäßig läuft Firebase im **Testmodus** = jeder im Internet kann mit de
 ```json
 {
   "rules": {
-    ".read": true,
-    ".write": true
+    ".read": false,
+    ".write": false,
+    "bookings": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "busBookings": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "users": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "deletedSeries": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "customFields": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
   }
 }
 ```
 
-Das ist die einfachste Variante: **jeder, der die App-URL kennt, kann lesen und schreiben**. Für den Verein praktikabel, da die App-URL nur intern geteilt wird.
-
-**Optional (sicherer)**: Wenn du später Firebase Authentication einbauen willst, kannst du die Regeln auf eingeloggte Nutzer einschränken. Sag mir Bescheid, wenn du das möchtest.
+Nur eingeloggte Nutzer dürfen lesen und schreiben – und nur auf diese fünf Pfade. Alles andere ist gesperrt.
 
 ### ⚠️ Achtung – Testmodus läuft nach 30 Tagen ab
 
