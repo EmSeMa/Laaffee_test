@@ -63,6 +63,7 @@
             height: 90px;
             width: auto;
             display: block;
+            mix-blend-mode: lighten;
         }
 
         .nav-links {
@@ -79,6 +80,18 @@
 
         .nav-links a:hover {
             opacity: 0.8;
+        }
+
+        .nav-link-stacked {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            line-height: 1.25;
+        }
+
+        .nav-link-stacked span {
+            display: block;
         }
 
         .stadium-wrapper {
@@ -504,9 +517,9 @@
                 <li><a href="#features">Funktionen</a></li>
                 <li><a href="#contacts">Ansprechpartner</a></li>
                 <li><a href="#downloads">Downloads</a></li>
-                <li><a href="https://team.jako.com/de-de/team/sportfreunde_lauffen_jugend/">SFL-Shop Jugend</a></li>
-                <li><a href="https://team.jako.com/de-de/team/sportfreunde_lauffen/?item_source=27559">SFL-Shop Aktive</a></li>
-                <li><a href="https://www.sportfreunde-lauffen.de">Sportfreunde Lauffen Website</a></li>
+                <li><a href="https://team.jako.com/de-de/team/sportfreunde_lauffen_jugend/" class="nav-link-stacked"><span>SFL-Shop</span><span>Jugend</span></a></li>
+                <li><a href="https://team.jako.com/de-de/team/sportfreunde_lauffen/?item_source=27559" class="nav-link-stacked"><span>SFL-Shop</span><span>Aktive</span></a></li>
+                <li><a href="https://www.sportfreunde-lauffen.de" class="nav-link-stacked"><span>Sportfreunde Lauffen</span><span>Website</span></a></li>
             </ul>
         </nav>
     </header>

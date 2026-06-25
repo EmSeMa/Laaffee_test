@@ -152,6 +152,7 @@
                 margin: 0 auto 1rem auto;
                 max-width: 90px;
                 max-height: 90px;
+                mix-blend-mode: lighten;
             }
         `;
         document.head.appendChild(style);
