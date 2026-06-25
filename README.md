@@ -50,6 +50,7 @@ sportplatz-app/
 | `busBookings` | `/busBookings` |
 | `youthCoaches` | `/users` |
 | `deletedFixedSeriesBookings` | `/deletedSeries` |
+| `seriesFieldOverrides` | `/seriesFieldOverrides` |
 | `customSportFields` | `/customFields` |
 
 ## Lokale Entwicklung

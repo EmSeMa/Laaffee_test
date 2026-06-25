@@ -95,6 +95,7 @@ Die App ist bereits mit deinem Firebase-Projekt **`sfl-manager`** verbunden. Fol
 | Bus-Reservierungen | `/busBookings` |
 | Trainer / Benutzer | `/users` |
 | Gelöschte Serien-Termine | `/deletedSeries` |
+| Serien-Platzwechsel | `/seriesFieldOverrides` |
 | Eigene Sportplätze | `/customFields` |
 
 ### 🔐 Wichtig: Datenbank-Regeln setzen
@@ -123,6 +124,10 @@ Standardmäßig läuft Firebase im **Testmodus** = jeder im Internet kann mit de
       ".write": "auth != null"
     },
     "deletedSeries": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "seriesFieldOverrides": {
       ".read": "auth != null",
       ".write": "auth != null"
     },

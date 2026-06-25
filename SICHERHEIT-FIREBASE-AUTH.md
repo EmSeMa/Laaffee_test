@@ -64,6 +64,10 @@ Das ist der wichtigste Schritt — **ohne den ist der Schutz nicht echt!**
          ".read": "auth != null",
          ".write": "auth != null"
        },
+       "seriesFieldOverrides": {
+         ".read": "auth != null",
+         ".write": "auth != null"
+       },
        "customFields": {
          ".read": "auth != null",
          ".write": "auth != null"

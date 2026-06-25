@@ -636,6 +636,10 @@
             return !!(currentUser && currentUser.role === 'Admin');
         }
 
+        function updateAddUserButton() {
+            if (addUserBtn) addUserBtn.hidden = !isAdminUser();
+        }
+
         function renderLoginBar() {
             if (currentUser) {
                 const isAdmin = currentUser.role === 'Admin';
@@ -760,6 +764,8 @@
         }
 
         function renderUsers() {
+            updateAddUserButton();
+
             const filtered = users.filter(user => {
                 if (!searchTerm) return true;
                 const haystack = `${user.name} ${user.team} ${user.role} ${user.email}`.toLowerCase();
@@ -808,8 +814,6 @@
             });
 
             usersTbody.innerHTML = html;
-
-            addUserBtn.style.display = viewerIsAdmin ? '' : 'none';
         }
 
         function escapeHtml(str) {

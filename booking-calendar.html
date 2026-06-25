@@ -534,6 +534,24 @@
             transform: translateY(-2px);
         }
 
+        .booking-field-change {
+            background: #f0f0f0;
+            color: #000000;
+            border: 1px solid #cccccc;
+            padding: 0.5rem 0.85rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .booking-field-change:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+
         .booking-fixed-badge {
             background: #f0f0f0;
             color: #000000;
@@ -1318,6 +1336,48 @@
         </div>
     </div>
 
+    <!-- Platz ändern Dialog -->
+    <div class="dialog-overlay" id="fieldChangeOverlay">
+        <div class="dialog">
+            <h3>Platz ändern</h3>
+            <div class="dialog-content">
+                <div class="series-delete-info" id="fieldChangeInfo"></div>
+                <div class="field-select" style="margin-bottom: 1rem;">
+                    <label for="fieldChangeSelect" style="display:block; font-weight:bold; color:#333; margin-bottom:0.5rem;">Neuer Platz:</label>
+                    <select id="fieldChangeSelect" style="width:100%; padding:0.6rem; border:2px solid #e0e0e0; border-radius:5px; font-size:1rem;">
+                        <option value="1">Stadion - Platz 1</option>
+                        <option value="2">Trainingsplatz - Platz 2</option>
+                        <option value="3">Trainingsplatz - Platz 3</option>
+                    </select>
+                </div>
+                <div class="series-delete-options" id="fieldChangeSeriesOptions">
+                    <label class="series-delete-option">
+                        <input type="radio" name="fieldChangeMode" value="single" checked>
+                        <span>Nur diesen Termin</span>
+                    </label>
+                    <label class="series-delete-option">
+                        <input type="radio" name="fieldChangeMode" value="range">
+                        <span>Serie für Zeitraum</span>
+                    </label>
+                </div>
+                <div class="series-delete-range" id="fieldChangeRange">
+                    <label>
+                        Von
+                        <input type="date" id="fieldChangeFrom">
+                    </label>
+                    <label>
+                        Bis
+                        <input type="date" id="fieldChangeTo">
+                    </label>
+                </div>
+            </div>
+            <div class="dialog-buttons">
+                <button type="button" class="btn-cancel" id="fieldChangeCancelBtn">Abbrechen</button>
+                <button type="button" class="btn-confirm" id="fieldChangeConfirmBtn">Speichern</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Serien-Löschen Dialog -->
     <div class="dialog-overlay" id="seriesDeleteOverlay">
         <div class="dialog">
@@ -1656,6 +1716,17 @@
 
         const CALENDAR_FIELD_IDS = ['1', '2', '3'];
 
+        const FIELD_OPTIONS = [
+            { id: '1', text: 'Stadion - Platz 1' },
+            { id: '2', text: 'Trainingsplatz - Platz 2' },
+            { id: '3', text: 'Trainingsplatz - Platz 3' }
+        ];
+
+        function getFieldOptionText(fieldId) {
+            const option = FIELD_OPTIONS.find(item => String(item.id) === String(fieldId));
+            return option ? option.text : `Platz ${fieldId}`;
+        }
+
         function getBookingFieldId(booking) {
             return String(booking.fieldId || getFieldIdFromText(booking.field) || '');
         }
@@ -1694,11 +1765,37 @@
             }
         }
 
+        const SERIES_FIELD_OVERRIDES_KEY = 'seriesFieldOverrides';
+
+        function getSeriesFieldOverrides() {
+            try {
+                if (window.SFL) {
+                    const data = window.SFL.load(SERIES_FIELD_OVERRIDES_KEY, {});
+                    return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+                }
+                const stored = localStorage.getItem(SERIES_FIELD_OVERRIDES_KEY);
+                if (!stored) return {};
+                const parsed = JSON.parse(stored);
+                return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveSeriesFieldOverrides(overrides) {
+            if (window.SFL) {
+                window.SFL.save(SERIES_FIELD_OVERRIDES_KEY, overrides);
+            } else {
+                localStorage.setItem(SERIES_FIELD_OVERRIDES_KEY, JSON.stringify(overrides));
+            }
+        }
+
         function generateFixedSeriesBookings() {
             const startDate = new Date();
             const endDate = new Date(currentDate.getFullYear() + 1, 11, 31);
             const generated = [];
             const deletedIds = new Set(getDeletedSeriesIds());
+            const fieldOverrides = getSeriesFieldOverrides();
 
             FIXED_TRAINING_SERIES.forEach((series) => {
                 const targetWeekday = DAY_TO_INDEX[series.day];
@@ -1711,7 +1808,7 @@
                 while (dateCursor <= endDate) {
                     const id = `fixed-${series.team}-${series.day}-${formatDate(dateCursor)}-${series.startTime}`;
                     if (!deletedIds.has(id)) {
-                        generated.push({
+                        const booking = {
                             id: id,
                             date: formatDate(dateCursor),
                             field: series.field,
@@ -1721,7 +1818,13 @@
                             endTime: series.endTime,
                             fieldPortion: series.fieldPortion || 'full',
                             isFixedSeries: true
-                        });
+                        };
+                        const override = fieldOverrides[id];
+                        if (override && override.fieldId) {
+                            booking.fieldId = String(override.fieldId);
+                            booking.field = override.field || getFieldOptionText(override.fieldId);
+                        }
+                        generated.push(booking);
                     }
                     dateCursor.setDate(dateCursor.getDate() + 7);
                 }
@@ -1901,12 +2004,18 @@
             return rangeA[0] < rangeB[1] && rangeB[0] < rangeA[1];
         }
 
-        function hasDoubleBooking(newBooking) {
+        function hasDoubleBooking(newBooking, excludeIds = []) {
+            const excludeSet = new Set(
+                (Array.isArray(excludeIds) ? excludeIds : [excludeIds])
+                    .filter(Boolean)
+                    .map(id => String(id))
+            );
             const newRanges = getTimeRanges(newBooking.startTime, newBooking.endTime);
             const newPortion = normalizeFieldPortion(newBooking);
             const newFieldId = getBookingFieldId(newBooking);
 
             return getAllBookings().some(existingBooking => {
+                if (excludeSet.has(String(existingBooking.id))) return false;
                 if (existingBooking.date !== newBooking.date) return false;
                 if (getBookingFieldId(existingBooking) !== newFieldId) return false;
                 if (!portionsConflict(newPortion, normalizeFieldPortion(existingBooking))) return false;
@@ -2224,12 +2333,14 @@
                         // - Admin: alle Löschen-Buttons
                         // - Trainer: nur Buchungen der eigenen Mannschaft (auch Serien)
                         const canDelete = !!currentUser && (isAdmin || (booking.team && booking.team === userTeam));
+                        const fieldLabel = booking.field || getFieldOptionText(getBookingFieldId(booking));
                         if (booking.isFixedSeries) {
                             if (canDelete) {
                                 actionElement = `
-                                    <span style="display:inline-flex; gap:0.4rem; align-items:center;">
+                                    <span style="display:inline-flex; gap:0.4rem; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
                                         <span class="booking-fixed-badge">Serie</span>
-                                        <button class="booking-delete" onclick="openSeriesDeleteDialog('${booking.id}')">Löschen</button>
+                                        <button type="button" class="booking-field-change" onclick="openFieldChangeDialog('${booking.id}', true)">Platz</button>
+                                        <button type="button" class="booking-delete" onclick="openSeriesDeleteDialog('${booking.id}')">Löschen</button>
                                     </span>
                                 `;
                             } else {
@@ -2237,7 +2348,12 @@
                             }
                         } else {
                             if (canDelete) {
-                                actionElement = `<button class="booking-delete" onclick="deleteBooking('${booking.id}', false)">Löschen</button>`;
+                                actionElement = `
+                                    <span style="display:inline-flex; gap:0.4rem; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                                        <button type="button" class="booking-field-change" onclick="openFieldChangeDialog('${booking.id}', false)">Platz</button>
+                                        <button type="button" class="booking-delete" onclick="deleteBooking('${booking.id}', false)">Löschen</button>
+                                    </span>
+                                `;
                             } else {
                                 actionElement = '';
                             }
@@ -2256,6 +2372,7 @@
                                 <div class="booking-info">
                                     <h4>⚽ ${booking.team || 'Keine Mannschaft'}</h4>
                                     <p>${timeDisplay}</p>
+                                    <p>📍 ${fieldLabel}</p>
                                     ${portionDisplay}
                                 </div>
                                 ${actionElement}
@@ -2464,6 +2581,216 @@
             });
         }
 
+        let pendingFieldChange = null;
+        const fieldChangeOverlay = document.getElementById('fieldChangeOverlay');
+        const fieldChangeInfo = document.getElementById('fieldChangeInfo');
+        const fieldChangeSelect = document.getElementById('fieldChangeSelect');
+        const fieldChangeSeriesOptions = document.getElementById('fieldChangeSeriesOptions');
+        const fieldChangeRange = document.getElementById('fieldChangeRange');
+        const fieldChangeFrom = document.getElementById('fieldChangeFrom');
+        const fieldChangeTo = document.getElementById('fieldChangeTo');
+        const fieldChangeCancelBtn = document.getElementById('fieldChangeCancelBtn');
+        const fieldChangeConfirmBtn = document.getElementById('fieldChangeConfirmBtn');
+
+        function findBookingById(id) {
+            return getAllBookings().find(b => String(b.id) === String(id)) || null;
+        }
+
+        function updateFieldChangeRangeVisibility() {
+            const mode = document.querySelector('input[name="fieldChangeMode"]:checked');
+            if (fieldChangeRange) {
+                fieldChangeRange.classList.toggle('active', mode && mode.value === 'range');
+            }
+        }
+
+        document.querySelectorAll('input[name="fieldChangeMode"]').forEach(input => {
+            input.addEventListener('change', updateFieldChangeRangeVisibility);
+        });
+
+        function closeFieldChangeDialog() {
+            pendingFieldChange = null;
+            if (fieldChangeOverlay) fieldChangeOverlay.classList.remove('active');
+        }
+
+        function openFieldChangeDialog(id, isFixedSeries) {
+            if (!currentUser) {
+                alert('Bitte zuerst einloggen.');
+                return;
+            }
+
+            const booking = findBookingById(id);
+            if (!booking) {
+                alert('Buchung nicht gefunden.');
+                return;
+            }
+
+            const isAdmin = currentUser.role === 'Admin';
+            if (!isAdmin && booking.team !== currentUser.team) {
+                alert('Du kannst nur Buchungen deiner eigenen Mannschaft bearbeiten.');
+                return;
+            }
+
+            pendingFieldChange = { id, isFixedSeries: !!isFixedSeries };
+            const dateLabel = new Date(`${booking.date}T12:00:00`).toLocaleDateString('de-DE', {
+                weekday: 'long',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            const currentField = booking.field || getFieldOptionText(getBookingFieldId(booking));
+
+            if (fieldChangeInfo) {
+                fieldChangeInfo.innerHTML = `
+                    <strong>${booking.team}</strong><br>
+                    ${dateLabel}<br>
+                    ${booking.allDay ? 'Ganzer Tag' : `${booking.startTime} – ${booking.endTime} Uhr`}<br>
+                    Aktuell: ${currentField}
+                `;
+            }
+
+            if (fieldChangeSelect) {
+                const currentFieldId = getBookingFieldId(booking);
+                fieldChangeSelect.value = CALENDAR_FIELD_IDS.includes(currentFieldId) ? currentFieldId : '1';
+            }
+
+            if (fieldChangeSeriesOptions) {
+                fieldChangeSeriesOptions.style.display = isFixedSeries ? 'flex' : 'none';
+            }
+            const singleMode = document.querySelector('input[name="fieldChangeMode"][value="single"]');
+            if (singleMode) singleMode.checked = true;
+            if (fieldChangeFrom) fieldChangeFrom.value = booking.date;
+            if (fieldChangeTo) fieldChangeTo.value = booking.date;
+            updateFieldChangeRangeVisibility();
+
+            if (fieldChangeOverlay) fieldChangeOverlay.classList.add('active');
+        }
+
+        function setSeriesFieldOverrideForId(id, fieldId, fieldText, seriesDef) {
+            const overrides = getSeriesFieldOverrides();
+            const defaultFieldId = String(getFieldIdFromText(seriesDef.field));
+            if (String(fieldId) === defaultFieldId) {
+                delete overrides[id];
+            } else {
+                overrides[id] = { field: fieldText, fieldId: String(fieldId) };
+            }
+            saveSeriesFieldOverrides(overrides);
+        }
+
+        function confirmFieldChange() {
+            if (!pendingFieldChange) return;
+
+            const booking = findBookingById(pendingFieldChange.id);
+            if (!booking) {
+                alert('Buchung nicht gefunden.');
+                closeFieldChangeDialog();
+                return;
+            }
+
+            const newFieldId = fieldChangeSelect ? fieldChangeSelect.value : '';
+            const newFieldText = fieldChangeSelect
+                ? fieldChangeSelect.options[fieldChangeSelect.selectedIndex].text
+                : getFieldOptionText(newFieldId);
+
+            if (String(getBookingFieldId(booking)) === String(newFieldId)) {
+                closeFieldChangeDialog();
+                return;
+            }
+
+            if (pendingFieldChange.isFixedSeries) {
+                const mode = document.querySelector('input[name="fieldChangeMode"]:checked');
+                const changeMode = mode ? mode.value : 'single';
+                const seriesDef = findSeriesDefinitionForBooking(booking);
+                if (!seriesDef) {
+                    alert('Serien-Definition nicht gefunden.');
+                    return;
+                }
+
+                let idsToChange = [pendingFieldChange.id];
+                if (changeMode === 'range') {
+                    const fromStr = fieldChangeFrom ? fieldChangeFrom.value : '';
+                    const toStr = fieldChangeTo ? fieldChangeTo.value : '';
+                    if (!fromStr || !toStr) {
+                        alert('Bitte Von- und Bis-Datum angeben.');
+                        return;
+                    }
+                    if (fromStr > toStr) {
+                        alert('Das Von-Datum darf nicht nach dem Bis-Datum liegen.');
+                        return;
+                    }
+                    idsToChange = collectSeriesIdsInRange(seriesDef, fromStr, toStr);
+                    if (idsToChange.length === 0) {
+                        alert('Im gewählten Zeitraum gibt es keine passenden Serien-Termine.');
+                        return;
+                    }
+                }
+
+                idsToChange = idsToChange.filter(id =>
+                    fixedSeriesBookings.some(b => String(b.id) === String(id))
+                );
+                if (idsToChange.length === 0) {
+                    alert('Keine gültigen Serien-Termine zum Ändern gefunden.');
+                    return;
+                }
+
+                const conflicts = [];
+                idsToChange.forEach(seriesId => {
+                    const seriesBooking = fixedSeriesBookings.find(b => String(b.id) === String(seriesId));
+                    if (!seriesBooking) return;
+                    const updated = {
+                        ...seriesBooking,
+                        field: newFieldText,
+                        fieldId: newFieldId
+                    };
+                    if (hasDoubleBooking(updated, idsToChange)) {
+                        conflicts.push(seriesBooking.date);
+                    }
+                });
+
+                if (conflicts.length > 0) {
+                    alert(`Platzwechsel nicht möglich – Konflikt am:\n${conflicts.slice(0, 5).join('\n')}${conflicts.length > 5 ? '\n…' : ''}`);
+                    return;
+                }
+
+                idsToChange.forEach(seriesId => {
+                    setSeriesFieldOverrideForId(seriesId, newFieldId, newFieldText, seriesDef);
+                });
+                closeFieldChangeDialog();
+                refreshAfterSeriesChange();
+                return;
+            }
+
+            const updatedBooking = {
+                ...booking,
+                field: newFieldText,
+                fieldId: newFieldId
+            };
+            if (hasDoubleBooking(updatedBooking, booking.id)) {
+                alert('Platzwechsel nicht möglich – es gibt bereits eine überschneidende Buchung auf diesem Platz.');
+                return;
+            }
+
+            const index = bookings.findIndex(b => String(b.id) === String(booking.id));
+            if (index === -1) {
+                alert('Buchung nicht gefunden.');
+                closeFieldChangeDialog();
+                return;
+            }
+            bookings[index] = updatedBooking;
+            saveBookings();
+            closeFieldChangeDialog();
+            renderBookings();
+            renderCalendar();
+            renderAvailability();
+        }
+
+        if (fieldChangeCancelBtn) fieldChangeCancelBtn.addEventListener('click', closeFieldChangeDialog);
+        if (fieldChangeConfirmBtn) fieldChangeConfirmBtn.addEventListener('click', confirmFieldChange);
+        if (fieldChangeOverlay) {
+            fieldChangeOverlay.addEventListener('click', (e) => {
+                if (e.target === fieldChangeOverlay) closeFieldChangeDialog();
+            });
+        }
+
         // Buchung löschen
         function deleteBooking(id, isFixedSeries) {
             if (!currentUser) {
@@ -2542,6 +2869,12 @@
                 renderBookings();
             });
             window.SFL.subscribe('deletedFixedSeriesBookings', () => {
+                generateFixedSeriesBookings();
+                renderBookings();
+                renderCalendar();
+                renderAvailability();
+            });
+            window.SFL.subscribe('seriesFieldOverrides', () => {
                 generateFixedSeriesBookings();
                 renderBookings();
                 renderCalendar();
