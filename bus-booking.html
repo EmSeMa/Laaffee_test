@@ -787,6 +787,16 @@
                 </label>
             </div>
 
+            <div class="field-select" style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="checkbox" id="multiDayCheckbox" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="multiDayCheckbox" style="margin: 0; cursor: pointer; font-weight: normal;">Mehrtägige Buchung (z.&nbsp;B. Trainingslager)</label>
+            </div>
+            <div class="text-field" id="multiDayDateWrapper" style="display: none;">
+                <label for="endDateInput">Bis (letzter Tag):</label>
+                <input type="date" id="endDateInput">
+                <div id="multiDayInfo" style="margin-top: 0.5rem; font-size: 0.85rem; color: #555;"></div>
+            </div>
+
             <div class="text-field">
                 <label for="driverInput">Fahrer (optional):</label>
                 <input type="text" id="driverInput" placeholder="Name des Fahrers">
@@ -900,6 +910,10 @@
         const startTimeInput = document.getElementById('startTime');
         const endTimeInput = document.getElementById('endTime');
         const termsAccept = document.getElementById('termsAccept');
+        const multiDayCheckbox = document.getElementById('multiDayCheckbox');
+        const multiDayDateWrapper = document.getElementById('multiDayDateWrapper');
+        const endDateInput = document.getElementById('endDateInput');
+        const multiDayInfo = document.getElementById('multiDayInfo');
 
         let currentDate = new Date();
         let selectedDate = null;
@@ -911,6 +925,87 @@
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
+
+        function getBookingEndDate(booking) {
+            return booking.endDate || booking.date;
+        }
+
+        function bookingCoversDate(booking, dateStr) {
+            return dateStr >= booking.date && dateStr <= getBookingEndDate(booking);
+        }
+
+        function dateRangesOverlap(startA, endA, startB, endB) {
+            return startA <= endB && startB <= endA;
+        }
+
+        function formatBookingDateLabel(booking) {
+            const endDate = getBookingEndDate(booking);
+            const dateOptions = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            const startObj = new Date(`${booking.date}T12:00:00`);
+            if (endDate === booking.date) {
+                return startObj.toLocaleDateString('de-DE', dateOptions);
+            }
+            const endObj = new Date(`${endDate}T12:00:00`);
+            const startStr = startObj.toLocaleDateString('de-DE', dateOptions);
+            const endStr = endObj.toLocaleDateString('de-DE', dateOptions);
+            return `${startStr} – ${endStr}`;
+        }
+
+        function updateMultiDayInfo() {
+            if (!multiDayInfo || !endDateInput || !selectedDate) return;
+            if (!multiDayCheckbox || !multiDayCheckbox.checked) {
+                multiDayInfo.textContent = '';
+                return;
+            }
+            const endVal = endDateInput.value;
+            if (!endVal) {
+                multiDayInfo.textContent = '';
+                return;
+            }
+            if (endVal < selectedDate) {
+                multiDayInfo.innerHTML = '<span style="color:#c62828;">⚠️ End-Datum muss am oder nach dem Start-Datum liegen.</span>';
+                return;
+            }
+            const startObj = new Date(`${selectedDate}T12:00:00`);
+            const endObj = new Date(`${endVal}T12:00:00`);
+            const diffDays = Math.round((endObj - startObj) / (1000 * 60 * 60 * 24)) + 1;
+            const startStr = startObj.toLocaleDateString('de-DE');
+            const endStr = endObj.toLocaleDateString('de-DE');
+            multiDayInfo.innerHTML = `📅 Buchung vom <strong>${startStr}</strong> bis <strong>${endStr}</strong> (<strong>${diffDays}</strong> Tag${diffDays === 1 ? '' : 'e'})`;
+        }
+
+        function updateMultiDayVisibility() {
+            if (!multiDayCheckbox || !multiDayDateWrapper) return;
+            if (multiDayCheckbox.checked) {
+                multiDayDateWrapper.style.display = 'block';
+                if (endDateInput && selectedDate) {
+                    endDateInput.min = selectedDate;
+                    if (!endDateInput.value || endDateInput.value < selectedDate) {
+                        endDateInput.value = selectedDate;
+                    }
+                }
+                updateMultiDayInfo();
+            } else {
+                multiDayDateWrapper.style.display = 'none';
+                if (endDateInput) endDateInput.value = '';
+                if (multiDayInfo) multiDayInfo.textContent = '';
+            }
+        }
+
+        function resetMultiDayFields() {
+            if (multiDayCheckbox) multiDayCheckbox.checked = false;
+            if (endDateInput) endDateInput.value = '';
+            if (multiDayInfo) multiDayInfo.textContent = '';
+            updateMultiDayVisibility();
+        }
+
+        if (multiDayCheckbox) multiDayCheckbox.addEventListener('change', updateMultiDayVisibility);
+        if (endDateInput) endDateInput.addEventListener('change', updateMultiDayInfo);
 
         function renderCalendar() {
             const year = currentDate.getFullYear();
@@ -946,7 +1041,7 @@
                     classes += ' past';
                 }
 
-                if (bookings.some(b => b.date === dateStr)) {
+                if (bookings.some(b => bookingCoversDate(b, dateStr))) {
                     classes += ' booked';
                 }
 
@@ -1021,6 +1116,11 @@
             selectedDate = dateStr;
             renderCalendar();
             applyTeamRestrictions();
+            if (endDateInput) {
+                endDateInput.min = dateStr;
+                endDateInput.value = dateStr;
+            }
+            resetMultiDayFields();
             dialogOverlay.classList.add('active');
         }
 
@@ -1028,11 +1128,18 @@
             dialogOverlay.classList.remove('active');
             selectedDate = null;
             termsAccept.checked = false;
+            resetMultiDayFields();
             renderCalendar();
         });
 
         function hasBusConflict(newBooking) {
-            return bookings.some(existing => existing.date === newBooking.date);
+            const newStart = newBooking.date;
+            const newEnd = getBookingEndDate(newBooking);
+            return bookings.some(existing => {
+                const existStart = existing.date;
+                const existEnd = getBookingEndDate(existing);
+                return dateRangesOverlap(newStart, newEnd, existStart, existEnd);
+            });
         }
 
         confirmBtn.addEventListener('click', () => {
@@ -1054,6 +1161,16 @@
             }
 
             if (selectedDate && startTimeInput.value && endTimeInput.value) {
+                const isMultiDay = multiDayCheckbox && multiDayCheckbox.checked && endDateInput && endDateInput.value;
+                let endDate = selectedDate;
+                if (isMultiDay) {
+                    endDate = endDateInput.value;
+                    if (endDate < selectedDate) {
+                        alert('Das End-Datum muss am oder nach dem Start-Datum liegen.');
+                        return;
+                    }
+                }
+
                 const booking = {
                     id: Date.now(),
                     date: selectedDate,
@@ -1070,8 +1187,15 @@
                     notificationSent: false
                 };
 
+                if (isMultiDay && endDate !== selectedDate) {
+                    booking.endDate = endDate;
+                }
+
                 if (hasBusConflict(booking)) {
-                    alert('Doppelbuchung nicht möglich: Der Bus ist an diesem Tag bereits gebucht.');
+                    const conflictMsg = booking.endDate
+                        ? 'Doppelbuchung nicht möglich: Der Bus ist in diesem Zeitraum bereits gebucht.'
+                        : 'Doppelbuchung nicht möglich: Der Bus ist an diesem Tag bereits gebucht.';
+                    alert(conflictMsg);
                     return;
                 }
 
@@ -1090,6 +1214,7 @@
                 startTimeInput.value = '14:00';
                 endTimeInput.value = '20:00';
                 termsAccept.checked = false;
+                resetMultiDayFields();
 
                 notifyNewBusBooking(booking);
             }
@@ -1107,7 +1232,7 @@
 
         function renderBookings() {
             const todayStr = formatDate(new Date());
-            const futureBookings = bookings.filter(b => b.date >= todayStr);
+            const futureBookings = bookings.filter(b => getBookingEndDate(b) >= todayStr);
 
             if (futureBookings.length === 0) {
                 bookingsList.innerHTML = '<div class="empty-message">Keine Bus-Buchungen vorhanden</div>';
@@ -1124,13 +1249,8 @@
             const isAdmin = currentUser && currentUser.role === 'Admin';
 
             sorted.forEach(booking => {
-                const dateObj = new Date(booking.date);
-                const dateStr = dateObj.toLocaleDateString('de-DE', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
+                const dateStr = formatBookingDateLabel(booking);
+                const isMultiDay = getBookingEndDate(booking) !== booking.date;
 
                 const isConfirmed = booking.status === 'confirmed';
                 const statusClass = isConfirmed ? 'confirmed' : 'pending';
@@ -1152,7 +1272,7 @@
                             <div class="booking-info">
                                 <h4>🚌 ${booking.team} – ${booking.purpose}<span class="status-badge ${statusClass}">${statusLabel}</span></h4>
                                 <p>📍 ${booking.destination}</p>
-                                <p>🕐 ${booking.startTime} - ${booking.endTime} Uhr</p>
+                                <p>🕐 ${booking.startTime} - ${booking.endTime} Uhr${isMultiDay ? ' (täglich)' : ''}</p>
                                 ${booking.driver ? `<p>👤 Fahrer: ${booking.driver}</p>` : ''}
                             </div>
                             ${actionsHtml}

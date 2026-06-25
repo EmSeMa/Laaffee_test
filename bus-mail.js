@@ -77,12 +77,20 @@
         return unique.length ? unique : [DEFAULT_ADMIN_EMAIL];
     }
 
+    function formatBookingDateRange(booking) {
+        const endDate = booking.endDate || booking.date;
+        if (!endDate || endDate === booking.date) {
+            return formatGermanDate(booking.date);
+        }
+        return `${formatGermanDate(booking.date)} bis ${formatGermanDate(endDate)}`;
+    }
+
     function buildAdminMailBody(booking) {
-        const dateLabel = formatGermanDate(booking.date);
+        const dateLabel = formatBookingDateRange(booking);
         const lines = [
             'Neue Bus-Buchung wartet auf Bestätigung in der SFL-App.',
             '',
-            `Datum: ${dateLabel}`,
+            `Zeitraum: ${dateLabel}`,
             `Mannschaft: ${booking.team || '-'}`,
             `Anlass: ${booking.purpose || '-'}`,
             `Ziel: ${booking.destination || '-'}`,
@@ -106,7 +114,8 @@
 
     function buildMailtoUrl(booking) {
         const admins = getAdminRecipients();
-        const subject = `Bus-Buchung zur Bestätigung: ${booking.team} - ${formatGermanDate(booking.date)}`;
+        const dateLabel = formatBookingDateRange(booking);
+        const subject = `Bus-Buchung zur Bestätigung: ${booking.team} - ${dateLabel}`;
         const body = buildAdminMailBody(booking);
         const userEmail = (booking.bookedByEmail || '').trim();
 
