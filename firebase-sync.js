@@ -11,6 +11,7 @@ const SYNCED_KEYS = {
     'youthCoaches': 'users',
     'deletedFixedSeriesBookings': 'deletedSeries',
     'seriesFieldOverrides': 'seriesFieldOverrides',
+    'eventShiftPlans': 'eventShifts',
     'customSportFields': 'customFields'
 };
 

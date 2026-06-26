@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Schichtpläne - Sportfreunde Lauffen</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="site-footer.css">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-gate.js"></script>
+    <script src="firebase-sync.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .header h1 { font-size: 1.75rem; }
+        .back-btn {
+            background: white;
+            color: #000;
+            border: none;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+        }
+        .content { padding: 2rem; }
+        .login-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .login-bar form { display: flex; gap: 0.5rem; align-items: center; }
+        .login-bar input {
+            padding: 0.45rem 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .login-bar button, .logout-btn, .primary-btn {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .toolbar h2 { color: #000; font-size: 1.35rem; }
+        .primary-btn { font-size: 0.95rem; }
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+        .event-card {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.25rem;
+            background: #fafafa;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .event-card:hover, .event-card.active {
+            border-color: #000;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .event-card h3 { margin-bottom: 0.35rem; color: #000; }
+        .event-card p { color: #666; font-size: 0.9rem; margin: 0.2rem 0; }
+        .event-detail {
+            margin-top: 2rem;
+            border-top: 2px solid #f0f0f0;
+            padding-top: 1.5rem;
+        }
+        .event-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .event-detail-header h3 { font-size: 1.4rem; color: #000; }
+        .shift-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.75rem;
+        }
+        .shift-table th, .shift-table td {
+            border: 1px solid #e9ecef;
+            padding: 0.65rem 0.75rem;
+            text-align: left;
+            font-size: 0.92rem;
+        }
+        .shift-table th { background: #f8f9fa; }
+        .helper-name-line {
+            display: block;
+            line-height: 1.35;
+        }
+        .danger-btn {
+            background: #c0392b;
+            color: white;
+            border: none;
+            padding: 0.45rem 0.75rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .secondary-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 0.45rem 0.75rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .excel-hint {
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.45;
+        }
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 2rem;
+            font-style: italic;
+        }
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .dialog-overlay.active { display: flex; }
+        .dialog {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        }
+        .dialog.shift-dialog {
+            max-width: 640px;
+        }
+        .dialog-hint {
+            font-size: 0.88rem;
+            color: #666;
+            margin: -0.35rem 0 1rem;
+            line-height: 1.45;
+        }
+        .stands-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .stand-row {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.85rem;
+            background: #fafafa;
+        }
+        .stand-row-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr 1fr auto;
+            gap: 0.65rem;
+            align-items: end;
+        }
+        .stand-row-grid .form-row { margin-bottom: 0; }
+        .stand-row-grid .remove-stand-btn {
+            padding: 0.55rem 0.65rem;
+            margin-bottom: 0.1rem;
+        }
+        .stand-helpers-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin-top: 0.65rem;
+            padding-top: 0.65rem;
+            border-top: 1px dashed #e0e0e0;
+        }
+        .stand-helpers-fields .form-row {
+            margin-bottom: 0;
+        }
+        .stand-helper-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.95rem;
+        }
+        .shift-time-group td.time-cell {
+            background: #f8f9fa;
+            font-weight: 600;
+            vertical-align: top;
+        }
+        .shift-time-group tr:not(:first-child) td.stand-cell {
+            border-top-style: dashed;
+        }
+        .add-stand-slot-btn {
+            margin-top: 0.15rem;
+            font-size: 0.82rem;
+        }
+        .shift-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            align-items: center;
+        }
+        .dialog h3 { margin-bottom: 1rem; color: #000; }
+        .form-row { margin-bottom: 1rem; }
+        .form-row label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.35rem;
+            color: #333;
+        }
+        .form-row input, .form-row textarea, .form-row select {
+            width: 100%;
+            padding: 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .form-row-double {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .dialog-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+        .dialog-buttons button { flex: 1; padding: 0.75rem; border-radius: 5px; border: none; font-weight: bold; cursor: pointer; }
+        .btn-cancel { background: #f0f0f0; color: #333; }
+        .btn-confirm { background: #000; color: white; }
+        @media (max-width: 640px) {
+            .form-row-double { grid-template-columns: 1fr; }
+            .shift-table { font-size: 0.85rem; }
+            .stand-row-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Schichtpläne für Veranstaltungen</h1>
+            <a href="index.html" class="back-btn">← Zurück</a>
+        </div>
+        <div class="content">
+            <div class="login-bar" id="loginBar">
+                <div id="loginInfo">Nicht angemeldet – Bitte mit Trainer-Code anmelden.</div>
+                <form id="loginForm" autocomplete="off">
+                    <input type="password" id="loginCodeInput" placeholder="Code" maxlength="6">
+                    <button type="submit">Anmelden</button>
+                </form>
+            </div>
+
+            <div class="toolbar">
+                <h2>Veranstaltungen</h2>
+                <button type="button" class="primary-btn" id="addEventBtn" hidden>+ Veranstaltung anlegen</button>
+            </div>
+
+            <div class="events-grid" id="eventsGrid">
+                <div class="empty-message">Lade Schichtpläne …</div>
+            </div>
+
+            <div class="event-detail" id="eventDetail" hidden></div>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="eventDialog">
+        <div class="dialog">
+            <h3 id="eventDialogTitle">Veranstaltung anlegen</h3>
+            <div class="form-row">
+                <label for="eventNameInput">Name der Veranstaltung</label>
+                <input type="text" id="eventNameInput" placeholder="z. B. Sommerfest, Hallenturnier">
+            </div>
+            <div class="form-row">
+                <label for="eventDateInput">Datum</label>
+                <input type="date" id="eventDateInput">
+            </div>
+            <div class="form-row">
+                <label for="eventLocationInput">Ort (optional)</label>
+                <input type="text" id="eventLocationInput" placeholder="z. B. Ulrichsheide">
+            </div>
+            <div class="dialog-buttons">
+                <button type="button" class="btn-cancel" id="eventCancelBtn">Abbrechen</button>
+                <button type="button" class="btn-confirm" id="eventSaveBtn">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="shiftDialog">
+        <div class="dialog shift-dialog">
+            <h3 id="shiftDialogTitle">Zeitraum mit Ständen anlegen</h3>
+            <p class="dialog-hint" id="shiftDialogHint">Ein Zeitraum, mehrere Stände parallel. Pro Stand die zuständige Jugendmannschaft wählen.</p>
+            <div class="form-row-double">
+                <div class="form-row">
+                    <label for="shiftStartInput">Von</label>
+                    <input type="time" id="shiftStartInput" value="10:00">
+                </div>
+                <div class="form-row">
+                    <label for="shiftEndInput">Bis</label>
+                    <input type="time" id="shiftEndInput" value="14:00">
+                </div>
+            </div>
+            <div class="stands-list" id="shiftStandsList"></div>
+            <button type="button" class="secondary-btn" id="addStandRowBtn">+ Weiteren Stand</button>
+            <div class="dialog-buttons">
+                <button type="button" class="btn-cancel" id="shiftCancelBtn">Abbrechen</button>
+                <button type="button" class="btn-confirm" id="shiftSaveBtn">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="excelImportInput" accept=".xlsx,.xls,.csv" hidden>
+
+    <script>
+        const STORAGE_KEY = 'eventShiftPlans';
+        const USERS_STORAGE_KEY = 'youthCoaches';
+        const SESSION_KEY = 'currentUserId';
+        const OPEN_TEAM_VALUE = 'Keine Mannschaftszuordnung';
+        const SHIFT_COUNT_MAX = 20;
+
+        const TEAM_OPTIONS = [
+            { value: OPEN_TEAM_VALUE, label: 'Keine Zuordnung (alle Trainer)' },
+            { value: 'Bambini', label: 'Bambini' },
+            { value: 'F-Jugend', label: 'F-Jugend' },
+            { value: 'E-Jugend', label: 'E-Jugend' },
+            { value: 'D-Jugend', label: 'D-Jugend' },
+            { value: 'C-Jugend', label: 'C-Jugend' },
+            { value: 'B-Jugend', label: 'B-Jugend' },
+            { value: 'A-Jugend', label: 'A-Jugend' },
+            { value: 'Aktive 1', label: 'Aktive 1' },
+            { value: 'Aktive 2', label: 'Aktive 2' },
+            { value: 'AH', label: 'AH' },
+            { value: 'Verein', label: 'Verein / Verwaltung' }
+        ];
+
+        let plans = [];
+        let currentUser = null;
+        let selectedPlanId = null;
+        let editingShiftId = null;
+
+        const loginInfo = document.getElementById('loginInfo');
+        const loginForm = document.getElementById('loginForm');
+        const addEventBtn = document.getElementById('addEventBtn');
+        const eventsGrid = document.getElementById('eventsGrid');
+        const eventDetail = document.getElementById('eventDetail');
+
+        function getActiveUsers() {
+            try {
+                const stored = localStorage.getItem(USERS_STORAGE_KEY);
+                if (!stored) return [];
+                const list = JSON.parse(stored);
+                return Array.isArray(list) ? list.filter(u => u.status === 'active') : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function getCurrentUser() {
+            const id = sessionStorage.getItem(SESSION_KEY);
+            if (!id) return null;
+            return getActiveUsers().find(u => String(u.id) === String(id)) || null;
+        }
+
+        function isAdminUser() {
+            return !!(currentUser && currentUser.role === 'Admin');
+        }
+
+        function isOpenTeamShift(shift) {
+            const team = shift && shift.team;
+            return !team || team === OPEN_TEAM_VALUE;
+        }
+
+        function getShiftTeamLabel(shift) {
+            if (!shift || isOpenTeamShift(shift)) return OPEN_TEAM_VALUE;
+            return shift.team;
+        }
+
+        function canManageShift(shift) {
+            if (!currentUser || !shift) return false;
+            if (isAdminUser()) return true;
+            if (isOpenTeamShift(shift)) return true;
+            return currentUser.team === shift.team;
+        }
+
+        function getDefaultTeamForNewShift() {
+            if (!currentUser) return OPEN_TEAM_VALUE;
+            if (isAdminUser()) return OPEN_TEAM_VALUE;
+            return currentUser.team || OPEN_TEAM_VALUE;
+        }
+
+        function buildTeamSelectOptions(selectedValue) {
+            const selected = selectedValue || getDefaultTeamForNewShift();
+            return TEAM_OPTIONS.map(opt => {
+                let hidden = false;
+                if (currentUser && !isAdminUser()) {
+                    const userTeam = currentUser.team;
+                    hidden = opt.value !== OPEN_TEAM_VALUE && opt.value !== userTeam;
+                }
+                if (hidden) return '';
+                const sel = opt.value === selected ? ' selected' : '';
+                return `<option value="${escapeHtml(opt.value)}"${sel}>${escapeHtml(opt.label)}</option>`;
+            }).join('');
+        }
+
+        function configureStandTeamSelect(select, selectedValue) {
+            if (!select) return;
+            const value = selectedValue || getDefaultTeamForNewShift();
+            select.innerHTML = buildTeamSelectOptions(value);
+            select.value = value;
+            if (currentUser && !isAdminUser() && currentUser.team) {
+                const canUseOpen = [...select.options].some(opt => opt.value === OPEN_TEAM_VALUE);
+                if (!canUseOpen || value === currentUser.team) {
+                    select.value = value === OPEN_TEAM_VALUE ? OPEN_TEAM_VALUE : currentUser.team;
+                }
+            }
+        }
+
+        function getShiftPersonCount(shift) {
+            const count = parseInt(shift && shift.personCount, 10);
+            return count > 0 ? count : 1;
+        }
+
+        function buildCountSelectOptions(selectedValue) {
+            const selected = getShiftPersonCount({ personCount: selectedValue });
+            let html = '';
+            for (let i = 1; i <= SHIFT_COUNT_MAX; i++) {
+                html += `<option value="${i}"${i === selected ? ' selected' : ''}>${i}</option>`;
+            }
+            return html;
+        }
+
+        function getShiftHelpers(shift) {
+            if (!shift) return [];
+            if (Array.isArray(shift.helpers)) {
+                return shift.helpers.map(name => String(name || '').trim());
+            }
+            if (shift.person) {
+                return [String(shift.person).trim()];
+            }
+            return [];
+        }
+
+        function normalizeHelpersForCount(helpers, count) {
+            const result = (helpers || []).slice(0, count).map(name => String(name || '').trim());
+            while (result.length < count) result.push('');
+            return result;
+        }
+
+        function formatHelpersLabel(shift) {
+            const names = getShiftHelpers(shift).filter(Boolean);
+            if (!names.length) {
+                return '<span style="color:#999;">— noch offen —</span>';
+            }
+            return names.map(name => `<span class="helper-name-line">${escapeHtml(name)}</span>`).join('');
+        }
+
+        function renderHelperInputs(container, count, helpers) {
+            if (!container) return;
+            const normalized = normalizeHelpersForCount(helpers, count);
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const wrap = document.createElement('div');
+                wrap.className = 'form-row';
+                wrap.innerHTML = `
+                    <label>Helfer ${i + 1}</label>
+                    <input type="text" class="stand-helper-input" placeholder="Name" value="${escapeHtml(normalized[i])}">
+                `;
+                container.appendChild(wrap);
+            }
+        }
+
+        function getHelpersFromRow(row) {
+            const count = parseInt(row.querySelector('.stand-count-select')?.value, 10) || 1;
+            const inputs = row.querySelectorAll('.stand-helper-input');
+            const helpers = [];
+            for (let i = 0; i < count; i++) {
+                helpers.push(inputs[i] ? inputs[i].value.trim() : '');
+            }
+            return helpers;
+        }
+
+        function wireStandRow(row, initialHelpers) {
+            const countSelect = row.querySelector('.stand-count-select');
+            const helpersContainer = row.querySelector('.stand-helpers-fields');
+            if (!countSelect || !helpersContainer) return;
+
+            const refreshHelpers = () => {
+                const count = parseInt(countSelect.value, 10) || 1;
+                const current = getHelpersFromRow(row);
+                renderHelperInputs(helpersContainer, count, current);
+            };
+
+            countSelect.addEventListener('change', refreshHelpers);
+            renderHelperInputs(
+                helpersContainer,
+                parseInt(countSelect.value, 10) || 1,
+                initialHelpers || []
+            );
+        }
+
+        function migratePlansTeams() {
+            plans.forEach(plan => {
+                if (plan.team && plan.team !== OPEN_TEAM_VALUE && Array.isArray(plan.shifts)) {
+                    plan.shifts.forEach(shift => {
+                        if (!shift.team) shift.team = plan.team;
+                    });
+                }
+                delete plan.team;
+                if (Array.isArray(plan.shifts)) {
+                    plan.shifts.forEach(shift => {
+                        if (!Array.isArray(shift.helpers) && shift.person) {
+                            shift.helpers = [String(shift.person).trim()];
+                            delete shift.person;
+                        }
+                    });
+                }
+            });
+        }
+
+        function renderLoginBar() {
+            if (currentUser) {
+                const isAdmin = isAdminUser();
+                loginInfo.innerHTML = `Eingeloggt als <strong>${escapeHtml(currentUser.name)}</strong> (${escapeHtml(currentUser.role)})${isAdmin ? ' – alle Mannschaften' : ' – Mannschaft: ' + escapeHtml(currentUser.team || '–')}`;
+                loginForm.innerHTML = '<button type="button" class="logout-btn" id="logoutBtn">Abmelden</button>';
+                document.getElementById('logoutBtn').addEventListener('click', logout);
+            } else {
+                loginInfo.textContent = 'Nicht angemeldet – Bitte mit Trainer-Code anmelden.';
+                loginForm.innerHTML = `
+                    <input type="password" id="loginCodeInput" placeholder="Code" maxlength="6">
+                    <button type="submit">Anmelden</button>
+                `;
+            }
+            if (addEventBtn) addEventBtn.hidden = !currentUser;
+        }
+
+        function tryLogin(code) {
+            const user = getActiveUsers().find(u => String(u.code) === String(code));
+            if (!user) {
+                alert('Ungültiger Code oder Benutzer ist inaktiv.');
+                return;
+            }
+            sessionStorage.setItem(SESSION_KEY, user.id);
+            currentUser = user;
+            renderLoginBar();
+            renderPlans();
+        }
+
+        function logout() {
+            sessionStorage.removeItem(SESSION_KEY);
+            currentUser = null;
+            selectedPlanId = null;
+            renderLoginBar();
+            renderPlans();
+        }
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('loginCodeInput');
+            if (!input) return;
+            const code = input.value.trim();
+            if (!code) return;
+            tryLogin(code);
+        });
+
+        function savePlans() {
+            if (window.SFL) {
+                window.SFL.save(STORAGE_KEY, plans);
+            } else {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(plans));
+            }
+        }
+
+        function loadPlans() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try { plans = JSON.parse(saved) || []; } catch (e) { plans = []; }
+            }
+            if (!Array.isArray(plans)) plans = [];
+            migratePlansTeams();
+        }
+
+        function formatDateLabel(dateStr) {
+            const date = new Date(`${dateStr}T12:00:00`);
+            return date.toLocaleDateString('de-DE', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+            }[ch]));
+        }
+
+        function renderPlans() {
+            const todayStr = new Date().toISOString().slice(0, 10);
+            const upcoming = [...plans].sort((a, b) => {
+                const dateCompare = (a.date || '').localeCompare(b.date || '');
+                if (dateCompare !== 0) return dateCompare;
+                return (a.name || '').localeCompare(b.name || '');
+            });
+
+            if (!upcoming.length) {
+                eventsGrid.innerHTML = '<div class="empty-message">Noch keine Schichtpläne vorhanden.</div>';
+                eventDetail.hidden = true;
+                return;
+            }
+
+            eventsGrid.innerHTML = upcoming.map(plan => {
+                const shiftCount = Array.isArray(plan.shifts) ? plan.shifts.length : 0;
+                const isPast = plan.date && plan.date < todayStr;
+                const activeCls = String(plan.id) === String(selectedPlanId) ? ' active' : '';
+                return `
+                    <div class="event-card${activeCls}" onclick="selectPlan(${plan.id})">
+                        <h3>${escapeHtml(plan.name || 'Ohne Titel')}</h3>
+                        <p>📅 ${plan.date ? formatDateLabel(plan.date) : 'Kein Datum'}</p>
+                        ${plan.location ? `<p>📍 ${escapeHtml(plan.location)}</p>` : ''}
+                        <p>👥 ${shiftCount} Schicht${shiftCount === 1 ? '' : 'en'}${isPast ? ' · vergangen' : ''}</p>
+                    </div>
+                `;
+            }).join('');
+
+            if (selectedPlanId) {
+                renderPlanDetail();
+            } else {
+                eventDetail.hidden = true;
+            }
+        }
+
+        function selectPlan(id) {
+            selectedPlanId = id;
+            renderPlans();
+        }
+
+        function groupShiftsByTimeSlot(shifts) {
+            const sorted = [...shifts].sort((a, b) => {
+                const startCompare = (a.startTime || '').localeCompare(b.startTime || '');
+                if (startCompare !== 0) return startCompare;
+                const endCompare = (a.endTime || '').localeCompare(b.endTime || '');
+                if (endCompare !== 0) return endCompare;
+                return (a.task || '').localeCompare(b.task || '');
+            });
+
+            const groups = [];
+            const map = new Map();
+            sorted.forEach(shift => {
+                const key = `${shift.startTime}|${shift.endTime}`;
+                if (!map.has(key)) {
+                    const group = {
+                        startTime: shift.startTime,
+                        endTime: shift.endTime,
+                        shifts: []
+                    };
+                    map.set(key, group);
+                    groups.push(group);
+                }
+                map.get(key).shifts.push(shift);
+            });
+            return groups;
+        }
+
+        function renderPlanDetail() {
+            const plan = plans.find(p => String(p.id) === String(selectedPlanId));
+            if (!plan) {
+                eventDetail.hidden = true;
+                return;
+            }
+
+            const shifts = Array.isArray(plan.shifts) ? plan.shifts : [];
+            const groups = groupShiftsByTimeSlot(shifts);
+            const canAddShifts = !!currentUser;
+            const canDeleteEvent = isAdminUser();
+
+            let rows = '';
+            if (!groups.length) {
+                rows = '<tr><td colspan="7" class="empty-message">Noch keine Schichten eingetragen.</td></tr>';
+            } else {
+                groups.forEach(group => {
+                    const slotCount = group.shifts.length;
+                    group.shifts.forEach((shift, index) => {
+                        const canEditShift = canManageShift(shift);
+                        const timeCells = index === 0
+                            ? `<td class="time-cell" rowspan="${slotCount}">${escapeHtml(group.startTime || '–')}</td>
+                               <td class="time-cell" rowspan="${slotCount}">${escapeHtml(group.endTime || '–')}</td>`
+                            : '';
+                        const addStandBtn = (index === slotCount - 1 && canAddShifts)
+                            ? `<button type="button" class="secondary-btn add-stand-slot-btn" onclick="openShiftDialogForSlot('${escapeHtml(group.startTime || '')}', '${escapeHtml(group.endTime || '')}')">+ Stand</button>`
+                            : '';
+                        rows += `
+                            <tr class="shift-time-group">
+                                ${timeCells}
+                                <td class="stand-cell">${escapeHtml(shift.task || '–')}</td>
+                                <td>${escapeHtml(getShiftTeamLabel(shift))}</td>
+                                <td>${getShiftPersonCount(shift)}</td>
+                                <td>${formatHelpersLabel(shift)}</td>
+                                <td>
+                                    <div class="shift-actions">
+                                        ${canEditShift ? `<button type="button" class="secondary-btn" onclick="openEditShiftDialog(${plan.id}, ${shift.id})">Bearbeiten</button>` : ''}
+                                        ${canEditShift ? `<button type="button" class="danger-btn" onclick="deleteShift(${plan.id}, ${shift.id})">Entfernen</button>` : ''}
+                                        ${addStandBtn}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+            }
+
+            eventDetail.hidden = false;
+            eventDetail.innerHTML = `
+                <div class="event-detail-header">
+                    <div>
+                        <h3>${escapeHtml(plan.name || 'Veranstaltung')}</h3>
+                        <p style="color:#666; margin-top:0.35rem;">
+                            ${plan.date ? formatDateLabel(plan.date) : ''}
+                            ${plan.location ? ` · ${escapeHtml(plan.location)}` : ''}
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        ${canAddShifts ? `<button type="button" class="primary-btn" onclick="openShiftDialog()">+ Zeitraum / Stände</button>` : ''}
+                        ${currentUser ? `<button type="button" class="secondary-btn" onclick="exportPlanExcel()">Excel exportieren</button>` : ''}
+                        ${canAddShifts ? `<button type="button" class="secondary-btn" onclick="triggerExcelImport()">Aus Excel importieren</button>` : ''}
+                        ${currentUser ? `<button type="button" class="secondary-btn" onclick="downloadExcelTemplate()">Excel-Vorlage</button>` : ''}
+                        ${canDeleteEvent ? `<button type="button" class="danger-btn" onclick="deletePlan(${plan.id})">Veranstaltung löschen</button>` : ''}
+                    </div>
+                </div>
+                <p class="excel-hint">Pro Schicht/Stand die Jugendmannschaft, benötigte Personenanzahl und Helfernamen festlegen.</p>
+                <table class="shift-table">
+                    <thead>
+                        <tr>
+                            <th>Von</th>
+                            <th>Bis</th>
+                            <th>Stand</th>
+                            <th>Mannschaft</th>
+                            <th>Anzahl</th>
+                            <th>Helfer</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        const eventDialog = document.getElementById('eventDialog');
+        const eventNameInput = document.getElementById('eventNameInput');
+        const eventDateInput = document.getElementById('eventDateInput');
+        const eventLocationInput = document.getElementById('eventLocationInput');
+
+        addEventBtn.addEventListener('click', () => {
+            if (!currentUser) {
+                alert('Bitte zuerst anmelden.');
+                return;
+            }
+            eventNameInput.value = '';
+            eventDateInput.value = '';
+            eventLocationInput.value = '';
+            eventDialog.classList.add('active');
+        });
+
+        document.getElementById('eventCancelBtn').addEventListener('click', () => eventDialog.classList.remove('active'));
+        document.getElementById('eventSaveBtn').addEventListener('click', () => {
+            const name = eventNameInput.value.trim();
+            const date = eventDateInput.value;
+            const location = eventLocationInput.value.trim();
+            if (!name) {
+                alert('Bitte einen Namen für die Veranstaltung angeben.');
+                return;
+            }
+            if (!date) {
+                alert('Bitte ein Datum wählen.');
+                return;
+            }
+            const plan = {
+                id: Date.now(),
+                name,
+                date,
+                location,
+                shifts: [],
+                createdBy: currentUser ? currentUser.id : null
+            };
+            plans.push(plan);
+            savePlans();
+            selectedPlanId = plan.id;
+            eventDialog.classList.remove('active');
+            renderPlans();
+        });
+
+        const shiftDialog = document.getElementById('shiftDialog');
+        const shiftStandsList = document.getElementById('shiftStandsList');
+        const addStandRowBtn = document.getElementById('addStandRowBtn');
+        const shiftDialogTitle = document.getElementById('shiftDialogTitle');
+        const shiftDialogHint = document.getElementById('shiftDialogHint');
+
+        function setShiftDialogMode(mode) {
+            const isEdit = mode === 'edit';
+            if (shiftDialogTitle) {
+                shiftDialogTitle.textContent = isEdit ? 'Schicht bearbeiten' : 'Zeitraum mit Ständen anlegen';
+            }
+            if (shiftDialogHint) {
+                shiftDialogHint.textContent = isEdit
+                    ? 'Zeit, Stand, Mannschaft, Anzahl und Helfernamen anpassen.'
+                    : 'Ein Zeitraum, mehrere Stände parallel. Pro Stand Mannschaft, Anzahl und Helfernamen festlegen.';
+            }
+            if (addStandRowBtn) addStandRowBtn.hidden = isEdit;
+        }
+
+        function closeShiftDialog() {
+            editingShiftId = null;
+            setShiftDialogMode('create');
+            shiftDialog.classList.remove('active');
+        }
+
+        function collectShiftsFromDialog(startTime, endTime) {
+            const standRows = shiftStandsList ? [...shiftStandsList.querySelectorAll('.stand-row')] : [];
+            const collected = [];
+            standRows.forEach((row, index) => {
+                const task = row.querySelector('.stand-task-input')?.value.trim() || '';
+                const personCount = parseInt(row.querySelector('.stand-count-select')?.value, 10) || 1;
+                const team = row.querySelector('.stand-team-select')?.value || OPEN_TEAM_VALUE;
+                const helpers = getHelpersFromRow(row);
+                if (!task) return;
+                if (!isAdminUser() && team !== OPEN_TEAM_VALUE && team !== currentUser.team) {
+                    return;
+                }
+                collected.push({ task, personCount, team, helpers, index });
+            });
+            return collected;
+        }
+
+        function updateStandRowRemoveButtons() {
+            if (!shiftStandsList) return;
+            const rows = shiftStandsList.querySelectorAll('.stand-row');
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-stand-btn');
+                if (btn) btn.hidden = rows.length <= 1;
+            });
+        }
+
+        function createStandRow(task = '', personCount = 1, team = '', helpers = []) {
+            const row = document.createElement('div');
+            row.className = 'stand-row';
+            const defaultTeam = team || getDefaultTeamForNewShift();
+            row.innerHTML = `
+                <div class="stand-row-grid">
+                    <div class="form-row">
+                        <label>Stand</label>
+                        <input type="text" class="stand-task-input" placeholder="z. B. Grill, Kasse" value="${escapeHtml(task)}">
+                    </div>
+                    <div class="form-row">
+                        <label>Mannschaft</label>
+                        <select class="stand-team-select"></select>
+                    </div>
+                    <div class="form-row">
+                        <label>Anzahl</label>
+                        <select class="stand-count-select">${buildCountSelectOptions(personCount)}</select>
+                    </div>
+                    <button type="button" class="secondary-btn remove-stand-btn">×</button>
+                </div>
+                <div class="stand-helpers-fields"></div>
+            `;
+            configureStandTeamSelect(row.querySelector('.stand-team-select'), defaultTeam);
+            wireStandRow(row, normalizeHelpersForCount(helpers, personCount));
+            row.querySelector('.remove-stand-btn').addEventListener('click', () => {
+                row.remove();
+                updateStandRowRemoveButtons();
+            });
+            return row;
+        }
+
+        function resetStandRows(count = 1) {
+            if (!shiftStandsList) return;
+            shiftStandsList.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                shiftStandsList.appendChild(createStandRow());
+            }
+            updateStandRowRemoveButtons();
+        }
+
+        if (addStandRowBtn) {
+            addStandRowBtn.addEventListener('click', () => {
+                shiftStandsList.appendChild(createStandRow());
+                updateStandRowRemoveButtons();
+                const lastTask = shiftStandsList.querySelector('.stand-row:last-child .stand-task-input');
+                if (lastTask) lastTask.focus();
+            });
+        }
+
+        function openShiftDialog(prefillStart, prefillEnd) {
+            if (!currentUser) {
+                alert('Bitte zuerst anmelden.');
+                return;
+            }
+            editingShiftId = null;
+            setShiftDialogMode('create');
+            document.getElementById('shiftStartInput').value = prefillStart || '10:00';
+            document.getElementById('shiftEndInput').value = prefillEnd || '14:00';
+            resetStandRows(1);
+            shiftDialog.classList.add('active');
+        }
+
+        function openShiftDialogForSlot(startTime, endTime) {
+            openShiftDialog(startTime, endTime);
+        }
+
+        function openEditShiftDialog(planId, shiftId) {
+            if (!currentUser) {
+                alert('Bitte zuerst anmelden.');
+                return;
+            }
+            const plan = plans.find(p => String(p.id) === String(planId));
+            if (!plan || !Array.isArray(plan.shifts)) return;
+            const shift = plan.shifts.find(s => String(s.id) === String(shiftId));
+            if (!shift) {
+                alert('Schicht nicht gefunden.');
+                return;
+            }
+            if (!canManageShift(shift)) {
+                alert('Keine Berechtigung zum Bearbeiten dieser Schicht.');
+                return;
+            }
+            selectedPlanId = planId;
+            editingShiftId = shiftId;
+            setShiftDialogMode('edit');
+            document.getElementById('shiftStartInput').value = shift.startTime || '10:00';
+            document.getElementById('shiftEndInput').value = shift.endTime || '14:00';
+            if (shiftStandsList) {
+                shiftStandsList.innerHTML = '';
+                shiftStandsList.appendChild(createStandRow(
+                    shift.task || '',
+                    getShiftPersonCount(shift),
+                    shift.team || OPEN_TEAM_VALUE,
+                    getShiftHelpers(shift)
+                ));
+            }
+            updateStandRowRemoveButtons();
+            shiftDialog.classList.add('active');
+        }
+
+        document.getElementById('shiftCancelBtn').addEventListener('click', closeShiftDialog);
+        document.getElementById('shiftSaveBtn').addEventListener('click', () => {
+            const plan = plans.find(p => String(p.id) === String(selectedPlanId));
+            if (!plan) return;
+            const startTime = document.getElementById('shiftStartInput').value;
+            const endTime = document.getElementById('shiftEndInput').value;
+            if (!startTime || !endTime) {
+                alert('Bitte Von- und Bis-Zeit angeben.');
+                return;
+            }
+
+            const collected = collectShiftsFromDialog(startTime, endTime);
+            if (!collected.length) {
+                alert('Bitte mindestens einen Stand mit Bezeichnung angeben (nur für deine Mannschaft oder ohne Zuordnung).');
+                return;
+            }
+
+            if (!Array.isArray(plan.shifts)) plan.shifts = [];
+
+            if (editingShiftId) {
+                const shiftIndex = plan.shifts.findIndex(s => String(s.id) === String(editingShiftId));
+                if (shiftIndex === -1) {
+                    alert('Schicht nicht gefunden.');
+                    closeShiftDialog();
+                    return;
+                }
+                const existing = plan.shifts[shiftIndex];
+                if (!canManageShift(existing)) {
+                    alert('Keine Berechtigung zum Bearbeiten dieser Schicht.');
+                    return;
+                }
+                const updated = {
+                    ...existing,
+                    startTime,
+                    endTime,
+                    task: collected[0].task,
+                    team: collected[0].team,
+                    personCount: collected[0].personCount,
+                    helpers: collected[0].helpers
+                };
+                delete updated.person;
+                if (!canManageShift(updated)) {
+                    alert('Du darfst diese Schicht nur für deine Mannschaft oder ohne Zuordnung speichern.');
+                    return;
+                }
+                plan.shifts[shiftIndex] = updated;
+            } else {
+                const newShifts = collected.map((entry, index) => ({
+                    id: Date.now() + index,
+                    startTime,
+                    endTime,
+                    task: entry.task,
+                    team: entry.team,
+                    personCount: entry.personCount,
+                    helpers: entry.helpers
+                }));
+                plan.shifts.push(...newShifts);
+            }
+
+            savePlans();
+            closeShiftDialog();
+            renderPlanDetail();
+            renderPlans();
+        });
+
+        function deleteShift(planId, shiftId) {
+            if (!currentUser || !confirm('Schicht wirklich entfernen?')) return;
+            const plan = plans.find(p => String(p.id) === String(planId));
+            if (!plan || !Array.isArray(plan.shifts)) return;
+            const shift = plan.shifts.find(s => String(s.id) === String(shiftId));
+            if (!shift || !canManageShift(shift)) {
+                alert('Keine Berechtigung zum Bearbeiten dieser Schicht.');
+                return;
+            }
+            plan.shifts = plan.shifts.filter(s => String(s.id) !== String(shiftId));
+            savePlans();
+            renderPlanDetail();
+            renderPlans();
+        }
+
+        function deletePlan(planId) {
+            if (!currentUser || !confirm('Veranstaltung inkl. aller Schichten wirklich löschen?')) return;
+            if (!isAdminUser()) {
+                alert('Nur ein Admin darf Veranstaltungen löschen.');
+                return;
+            }
+            plans = plans.filter(p => String(p.id) !== String(planId));
+            if (String(selectedPlanId) === String(planId)) selectedPlanId = null;
+            savePlans();
+            renderPlans();
+        }
+
+        function sanitizeFileName(name) {
+            return String(name || 'Schichtplan')
+                .replace(/[\\/:*?"<>|]/g, '-')
+                .replace(/\s+/g, '_')
+                .slice(0, 80);
+        }
+
+        function normalizeHeader(value) {
+            return String(value ?? '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g, ' ');
+        }
+
+        function formatExcelTime(value) {
+            if (value == null || value === '') return '';
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                const match = trimmed.match(/^(\d{1,2}):(\d{2})/);
+                if (match) {
+                    return `${String(match[1]).padStart(2, '0')}:${match[2]}`;
+                }
+                return trimmed;
+            }
+            if (typeof value === 'number' && !Number.isNaN(value)) {
+                if (value >= 1) {
+                    const date = XLSX.SSF.parse_date_code(value);
+                    if (date) {
+                        return `${String(date.H).padStart(2, '0')}:${String(date.M).padStart(2, '0')}`;
+                    }
+                }
+                const totalMins = Math.round(value * 24 * 60);
+                const h = Math.floor(totalMins / 60) % 24;
+                const m = totalMins % 60;
+                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            }
+            if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                return `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`;
+            }
+            return String(value).trim();
+        }
+
+        function buildShiftSheetRows(plan) {
+            const shifts = Array.isArray(plan.shifts) ? [...plan.shifts] : [];
+            shifts.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+            return [
+                ['Veranstaltung', plan.name || ''],
+                ['Datum', plan.date || ''],
+                ['Ort', plan.location || ''],
+                [],
+                ['Von', 'Bis', 'Stand', 'Mannschaft', 'Anzahl', 'Helfer'],
+                ...shifts.map(shift => [
+                    shift.startTime || '',
+                    shift.endTime || '',
+                    shift.task || '',
+                    getShiftTeamLabel(shift),
+                    getShiftPersonCount(shift),
+                    getShiftHelpers(shift).filter(Boolean).join(', ')
+                ])
+            ];
+        }
+
+        function writeWorkbookToFile(rows, fileName, sheetName) {
+            if (typeof XLSX === 'undefined') {
+                alert('Excel-Bibliothek nicht geladen. Bitte Seite neu laden.');
+                return;
+            }
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws['!cols'] = [{ wch: 10 }, { wch: 10 }, { wch: 22 }, { wch: 24 }, { wch: 10 }, { wch: 28 }];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Schichtplan');
+            XLSX.writeFile(wb, fileName);
+        }
+
+        function exportPlanExcel() {
+            if (!currentUser) {
+                alert('Bitte zuerst anmelden.');
+                return;
+            }
+            const plan = plans.find(p => String(p.id) === String(selectedPlanId));
+            if (!plan) {
+                alert('Bitte zuerst eine Veranstaltung auswählen.');
+                return;
+            }
+            const fileName = `${sanitizeFileName(plan.name)}_${plan.date || 'ohne-datum'}.xlsx`;
+            writeWorkbookToFile(buildShiftSheetRows(plan), fileName, 'Schichtplan');
+        }
+
+        function downloadExcelTemplate() {
+            if (!currentUser) {
+                alert('Bitte zuerst anmelden.');
+                return;
+            }
+            const rows = [
+                ['Veranstaltung', ''],
+                ['Datum', ''],
+                ['Ort', ''],
+                [],
+                ['Von', 'Bis', 'Stand', 'Mannschaft', 'Anzahl', 'Helfer'],
+                ['10:00', '14:00', 'Grill', 'D-Jugend', 2, 'Max Mustermann, Anna Beispiel'],
+                ['10:00', '14:00', 'Kasse', 'Keine Mannschaftszuordnung', 1, ''],
+                ['14:00', '18:00', 'Bar', 'F-Jugend', 3, 'Name 1, Name 2, Name 3']
+            ];
+            writeWorkbookToFile(rows, 'Schichtplan_Vorlage.xlsx', 'Vorlage');
+        }
+
+        function findShiftHeaderRow(rows) {
+            for (let i = 0; i < Math.min(rows.length, 30); i++) {
+                const row = rows[i];
+                if (!row || !row.length) continue;
+                const norm = row.map(normalizeHeader);
+                const vonIdx = norm.findIndex(c => ['von', 'start', 'startzeit', 'start time', 'uhrzeit von'].includes(c));
+                const bisIdx = norm.findIndex(c => ['bis', 'end', 'endzeit', 'end time', 'uhrzeit bis'].includes(c));
+                const taskIdx = norm.findIndex(c => [
+                    'stand', 'bereich / aufgabe', 'bereich/aufgabe', 'bereich', 'aufgabe', 'task', 'rolle', 'tätigkeit'
+                ].includes(c));
+                const personIdx = norm.findIndex(c => ['helfer', 'person', 'name', 'mitarbeiter'].includes(c));
+                const countIdx = norm.findIndex(c => ['anzahl', 'personen', 'personenanzahl', 'helfer anzahl'].includes(c));
+                const teamIdx = norm.findIndex(c => [
+                    'mannschaft', 'jugend', 'jugendmannschaft', 'team', 'zuständige jugendmannschaft'
+                ].includes(c));
+                if (vonIdx >= 0 && bisIdx >= 0 && taskIdx >= 0) {
+                    return { rowIndex: i, vonIdx, bisIdx, taskIdx, personIdx, countIdx, teamIdx };
+                }
+            }
+            return null;
+        }
+
+        function parseShiftsFromRows(rows) {
+            const header = findShiftHeaderRow(rows);
+            if (!header) return null;
+
+            const imported = [];
+            for (let i = header.rowIndex + 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || !row.length) continue;
+
+                const startTime = formatExcelTime(row[header.vonIdx]);
+                const endTime = formatExcelTime(row[header.bisIdx]);
+                const task = String(row[header.taskIdx] ?? '').trim();
+                const teamRaw = header.teamIdx >= 0 ? String(row[header.teamIdx] ?? '').trim() : '';
+                const team = teamRaw || OPEN_TEAM_VALUE;
+                let personCount = 1;
+                if (header.countIdx >= 0) {
+                    const rawCount = row[header.countIdx];
+                    const parsed = parseInt(rawCount, 10);
+                    if (!Number.isNaN(parsed) && parsed > 0) {
+                        personCount = Math.min(parsed, SHIFT_COUNT_MAX);
+                    }
+                }
+                let helpers = [];
+                if (header.personIdx >= 0) {
+                    const rawHelpers = String(row[header.personIdx] ?? '').trim();
+                    if (rawHelpers) {
+                        helpers = rawHelpers.split(/[,;]/).map(name => name.trim()).filter(Boolean);
+                        if (helpers.length > personCount) {
+                            personCount = Math.min(helpers.length, SHIFT_COUNT_MAX);
+                        }
+                    }
+                }
+                helpers = normalizeHelpersForCount(helpers, personCount);
+
+                if (!startTime && !endTime && !task && !teamRaw) continue;
+                if (!startTime || !endTime || !task) continue;
+
+                imported.push({
+                    id: Date.now() + i,
+                    startTime,
+                    endTime,
+                    task,
+                    team,
+                    personCount,
+                    helpers
+                });
+            }
+            return imported;
+        }
+
+        function triggerExcelImport() {
+            if (!currentUser) {
+                alert('Bitte zuerst anmelden.');
+                return;
+            }
+            if (!selectedPlanId) {
+                alert('Bitte zuerst eine Veranstaltung auswählen.');
+                return;
+            }
+            const plan = plans.find(p => String(p.id) === String(selectedPlanId));
+            if (!plan) {
+                alert('Veranstaltung nicht gefunden.');
+                return;
+            }
+            const input = document.getElementById('excelImportInput');
+            if (input) input.click();
+        }
+
+        function handleExcelImport(file) {
+            if (typeof XLSX === 'undefined') {
+                alert('Excel-Bibliothek nicht geladen. Bitte Seite neu laden.');
+                return;
+            }
+            const plan = plans.find(p => String(p.id) === String(selectedPlanId));
+            if (!plan) {
+                alert('Veranstaltung nicht gefunden.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[sheetName];
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                    const importedShifts = parseShiftsFromRows(rows);
+
+                    if (!importedShifts || !importedShifts.length) {
+                        alert('Keine gültigen Schichten gefunden.\n\nErwartete Spalten: Von, Bis, Stand, Mannschaft, Anzahl');
+                        return;
+                    }
+
+                    const allowedShifts = importedShifts.filter(shift => canManageShift(shift));
+                    const skipped = importedShifts.length - allowedShifts.length;
+                    if (!allowedShifts.length) {
+                        alert('Keine Schichten importiert – du darfst nur eigene Mannschaften oder offene Schichten eintragen.');
+                        return;
+                    }
+
+                    const replace = confirm(
+                        `${allowedShifts.length} Schicht(en) importieren${skipped ? ` (${skipped} übersprungen)` : ''}.\n\n` +
+                        'OK = Eigene Schichten ersetzen\n' +
+                        'Abbrechen = Anfügen'
+                    );
+
+                    if (!Array.isArray(plan.shifts)) plan.shifts = [];
+                    if (replace) {
+                        plan.shifts = plan.shifts.filter(shift => !canManageShift(shift));
+                        plan.shifts.push(...allowedShifts);
+                    } else {
+                        plan.shifts.push(...allowedShifts.map((shift, idx) => ({
+                            ...shift,
+                            id: Date.now() + idx
+                        })));
+                    }
+
+                    savePlans();
+                    renderPlanDetail();
+                    renderPlans();
+                    alert(`${allowedShifts.length} Schicht(en) importiert.${skipped ? `\n${skipped} Zeile(n) für andere Mannschaften übersprungen.` : ''}`);
+                } catch (err) {
+                    console.error(err);
+                    alert('Excel-Datei konnte nicht gelesen werden. Bitte Format prüfen (.xlsx, .xls, .csv).');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        const excelImportInput = document.getElementById('excelImportInput');
+        if (excelImportInput) {
+            excelImportInput.addEventListener('change', () => {
+                const file = excelImportInput.files && excelImportInput.files[0];
+                excelImportInput.value = '';
+                if (file) handleExcelImport(file);
+            });
+        }
+
+        window.selectPlan = selectPlan;
+        window.openShiftDialog = openShiftDialog;
+        window.openShiftDialogForSlot = openShiftDialogForSlot;
+        window.openEditShiftDialog = openEditShiftDialog;
+        window.deleteShift = deleteShift;
+        window.deletePlan = deletePlan;
+        window.exportPlanExcel = exportPlanExcel;
+        window.triggerExcelImport = triggerExcelImport;
+        window.downloadExcelTemplate = downloadExcelTemplate;
+
+        if (window.SFL) {
+            window.SFL.subscribe(STORAGE_KEY, (data) => {
+                plans = Array.isArray(data) ? data : [];
+                migratePlansTeams();
+                renderPlans();
+            });
+            window.SFL.subscribe(USERS_STORAGE_KEY, () => {
+                currentUser = getCurrentUser();
+                renderLoginBar();
+                renderPlans();
+            });
+        }
+
+        loadPlans();
+        currentUser = getCurrentUser();
+        renderLoginBar();
+        renderPlans();
+    </script>
+    <script src="site-footer.js"></script>
+    <script src="pwa-register.js"></script>
+</body>
+</html>
