@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sfl-manager-v30';
+const CACHE_VERSION = 'sfl-manager-v31';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
