@@ -514,7 +514,9 @@
                     <option value="Bambini">Bambini</option>
                     <option value="F-Jugend">F-Jugend</option>
                     <option value="E-Jugend">E-Jugend</option>
-                    <option value="D-Jugend">D-Jugend</option>
+                    <option value="D1">D1</option>
+                    <option value="D2">D2</option>
+                    <option value="D3">D3</option>
                     <option value="C-Jugend">C-Jugend</option>
                     <option value="B-Jugend">B-Jugend</option>
                     <option value="A-Jugend">A-Jugend</option>
@@ -570,7 +572,7 @@
 
     <script>
         const STORAGE_KEY = 'youthCoaches';
-        const MIGRATION_KEY = 'users_migration_v3';
+        const MIGRATION_KEY = 'users_migration_v4';
 
         const DEFAULT_USERS = [
             { id: 1, name: 'Trainer 1 Bambini', team: 'Bambini', role: 'Trainer', email: 'bambini1@sportfreunde-lauffen.de', phone: '', code: '1001', status: 'active' },
@@ -582,8 +584,12 @@
             { id: 3, name: 'Trainer 1 E-Jugend', team: 'E-Jugend', role: 'Trainer', email: 'ejugend1@sportfreunde-lauffen.de', phone: '', code: '1003', status: 'active' },
             { id: 23, name: 'Trainer 2 E-Jugend', team: 'E-Jugend', role: 'Trainer', email: 'ejugend2@sportfreunde-lauffen.de', phone: '', code: '1023', status: 'active' },
 
-            { id: 4, name: 'Trainer 1 D-Jugend', team: 'D-Jugend', role: 'Trainer', email: 'djugend1@sportfreunde-lauffen.de', phone: '', code: '1004', status: 'active' },
-            { id: 24, name: 'Trainer 2 D-Jugend', team: 'D-Jugend', role: 'Trainer', email: 'djugend2@sportfreunde-lauffen.de', phone: '', code: '1024', status: 'active' },
+            { id: 4, name: 'Trainer 1 D1', team: 'D1', role: 'Trainer', email: 'd1-1@sportfreunde-lauffen.de', phone: '', code: '1004', status: 'active' },
+            { id: 24, name: 'Trainer 2 D1', team: 'D1', role: 'Trainer', email: 'd1-2@sportfreunde-lauffen.de', phone: '', code: '1024', status: 'active' },
+            { id: 34, name: 'Trainer 1 D2', team: 'D2', role: 'Trainer', email: 'd2-1@sportfreunde-lauffen.de', phone: '', code: '1034', status: 'active' },
+            { id: 35, name: 'Trainer 2 D2', team: 'D2', role: 'Trainer', email: 'd2-2@sportfreunde-lauffen.de', phone: '', code: '1035', status: 'active' },
+            { id: 36, name: 'Trainer 1 D3', team: 'D3', role: 'Trainer', email: 'd3-1@sportfreunde-lauffen.de', phone: '', code: '1036', status: 'active' },
+            { id: 37, name: 'Trainer 2 D3', team: 'D3', role: 'Trainer', email: 'd3-2@sportfreunde-lauffen.de', phone: '', code: '1037', status: 'active' },
 
             { id: 5, name: 'Trainer 1 C-Jugend', team: 'C-Jugend', role: 'Trainer', email: 'cjugend1@sportfreunde-lauffen.de', phone: '', code: '1005', status: 'active' },
             { id: 25, name: 'Trainer 2 C-Jugend', team: 'C-Jugend', role: 'Trainer', email: 'cjugend2@sportfreunde-lauffen.de', phone: '', code: '1025', status: 'active' },
@@ -694,6 +700,15 @@
                 if (updated.name === 'Emanuel Massa' && updated.phone) {
                     changed = true;
                     updated = { ...updated, phone: '' };
+                }
+                // Alte D-Jugend-Trainer → D1 (D2/D3 kommen über Migration v4 hinzu)
+                if (updated.team === 'D-Jugend' || /D-Jugend/.test(updated.name || '')) {
+                    changed = true;
+                    updated = {
+                        ...updated,
+                        team: 'D1',
+                        name: (updated.name || '').replace(/D-Jugend/g, 'D1')
+                    };
                 }
                 return updated;
             });

@@ -606,14 +606,18 @@
             { team: 'F-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 1', fieldPortion: 'half1' },
             { team: 'E-Jugend', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 2', fieldPortion: 'full' },
             { team: 'E-Jugend', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 2', fieldPortion: 'full' },
-            { team: 'D-Jugend', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'full' },
-            { team: 'D-Jugend', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'full' },
+            { team: 'D1', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'half1' },
+            { team: 'D1', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'half1' },
+            { team: 'D2', day: 'Dienstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'half2' },
+            { team: 'D2', day: 'Donnerstag', startTime: '17:30', endTime: '19:00', field: 'Platz 1(Sommer)/2(Winter)', fieldPortion: 'half2' },
+            { team: 'D3', day: 'Mittwoch', startTime: '17:30', endTime: '19:00', field: 'Platz 3', fieldPortion: 'full' },
+            { team: 'D3', day: 'Freitag', startTime: '16:30', endTime: '18:00', field: 'Platz 3', fieldPortion: 'full' },
             { team: 'C-Jugend', day: 'Montag', startTime: '18:00', endTime: '19:30', field: 'Platz 2', fieldPortion: 'full' },
             { team: 'C-Jugend', day: 'Donnerstag', startTime: '17:00', endTime: '18:30', field: 'Platz 3', fieldPortion: 'full' },
             { team: 'B-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3', fieldPortion: 'half1' },
-            { team: 'B-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'half1' },
+            { team: 'B-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'full' },
             { team: 'A-Jugend', day: 'Dienstag', startTime: '18:00', endTime: '19:30', field: 'Lauffen - Platz 3', fieldPortion: 'half2' },
-            { team: 'A-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'half2' },
+            { team: 'A-Jugend', day: 'Donnerstag', startTime: '18:00', endTime: '19:30', field: 'Meimsheim', fieldPortion: 'full' },
             { team: 'Aktive 1', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)', fieldPortion: 'full' },
             { team: 'Aktive 1', day: 'Donnerstag', startTime: '19:30', endTime: '21:00', field: 'Platz 1(Sommer)/3(Winter)', fieldPortion: 'full' },
             { team: 'Aktive 2', day: 'Dienstag', startTime: '19:30', endTime: '21:00', field: 'Platz 2', fieldPortion: 'full' },
@@ -625,6 +629,14 @@
             if (portion === 'half1') return 'Halber Platz (1. Hälfte)';
             if (portion === 'half2') return 'Halber Platz (2. Hälfte)';
             return 'Ganzer Platz';
+        }
+
+        function formatTrainingLine(entry) {
+            const field = entry.field || 'Platz nicht gesetzt';
+            const isMeimsheim = /meimsheim/i.test(field);
+            const base = `${entry.day}, ${entry.startTime} - ${entry.endTime} Uhr | ${field}`;
+            if (isMeimsheim) return base;
+            return `${base} · ${getFieldPortionLabel(entry.fieldPortion || 'full')}`;
         }
 
         function formatOverviewDate(dateStr) {
@@ -692,8 +704,7 @@
                 `;
 
                 groupedByTeam[team].forEach((entry) => {
-                    const portionLabel = getFieldPortionLabel(entry.fieldPortion || 'full');
-                    html += `<p>${entry.day}, ${entry.startTime} - ${entry.endTime} Uhr | ${entry.field || 'Platz nicht gesetzt'} · ${portionLabel}</p>`;
+                    html += `<p>${formatTrainingLine(entry)}</p>`;
                 });
 
                 html += '</div>';
@@ -734,11 +745,15 @@
                 `;
 
                 grouped[dateKey].forEach((booking) => {
-                    const portionLabel = getFieldPortionLabel(booking.fieldPortion || 'full');
+                    const field = booking.field || '';
+                    const isMeimsheim = /meimsheim/i.test(field);
+                    const portionSuffix = isMeimsheim
+                        ? ''
+                        : ` · ${getFieldPortionLabel(booking.fieldPortion || 'full')}`;
                     html += `
                         <div class="overview-item">
                             <strong>${booking.startTime} - ${booking.endTime}</strong>
-                            <p>${booking.field} | Mannschaft: ${booking.team || 'Keine Angabe'} · ${portionLabel}</p>
+                            <p>${field} | Mannschaft: ${booking.team || 'Keine Angabe'}${portionSuffix}</p>
                         </div>
                     `;
                 });
