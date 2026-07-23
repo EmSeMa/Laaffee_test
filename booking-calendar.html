@@ -1352,6 +1352,29 @@
                         <option value="3">Trainingsplatz - Platz 3</option>
                     </select>
                 </div>
+                <div class="field-select" id="fieldChangePortionWrapper" style="margin-bottom: 1rem;">
+                    <label style="display:block; font-weight:bold; color:#333; margin-bottom:0.5rem;">Platzbelegung:</label>
+                    <div class="field-portion-options">
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldChangePortion" value="full" checked>
+                            <span>Ganzer Platz</span>
+                        </label>
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldChangePortion" value="half">
+                            <span>Halber Platz</span>
+                        </label>
+                    </div>
+                    <div class="field-half-select" id="fieldChangeHalfSelect" style="display:none;">
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldChangeHalf" value="half1" checked>
+                            <span>1. Hälfte</span>
+                        </label>
+                        <label class="field-portion-option">
+                            <input type="radio" name="fieldChangeHalf" value="half2">
+                            <span>2. Hälfte</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="series-delete-options" id="fieldChangeSeriesOptions">
                     <label class="series-delete-option">
                         <input type="radio" name="fieldChangeMode" value="single" checked>
@@ -1830,6 +1853,9 @@
                         if (override && override.fieldId) {
                             booking.fieldId = String(override.fieldId);
                             booking.field = override.field || getFieldOptionText(override.fieldId);
+                        }
+                        if (override && (override.fieldPortion === 'half1' || override.fieldPortion === 'half2' || override.fieldPortion === 'full')) {
+                            booking.fieldPortion = override.fieldPortion;
                         }
                         generated.push(booking);
                     }
@@ -2598,9 +2624,47 @@
         const fieldChangeTo = document.getElementById('fieldChangeTo');
         const fieldChangeCancelBtn = document.getElementById('fieldChangeCancelBtn');
         const fieldChangeConfirmBtn = document.getElementById('fieldChangeConfirmBtn');
+        const fieldChangeHalfSelect = document.getElementById('fieldChangeHalfSelect');
 
         function findBookingById(id) {
             return getAllBookings().find(b => String(b.id) === String(id)) || null;
+        }
+
+        function getSelectedFieldChangePortion() {
+            const portionMode = document.querySelector('input[name="fieldChangePortion"]:checked');
+            if (portionMode && portionMode.value === 'half') {
+                const halfChoice = document.querySelector('input[name="fieldChangeHalf"]:checked');
+                return halfChoice ? halfChoice.value : 'half1';
+            }
+            return 'full';
+        }
+
+        function updateFieldChangePortionVisibility() {
+            const isHalf = document.querySelector('input[name="fieldChangePortion"][value="half"]')?.checked;
+            if (fieldChangeHalfSelect) {
+                fieldChangeHalfSelect.style.display = isHalf ? 'flex' : 'none';
+            }
+        }
+
+        function setFieldChangePortionInputs(portion) {
+            const normalized = normalizeFieldPortion({ fieldPortion: portion });
+            const fullRadio = document.querySelector('input[name="fieldChangePortion"][value="full"]');
+            const halfRadio = document.querySelector('input[name="fieldChangePortion"][value="half"]');
+            const half1Radio = document.querySelector('input[name="fieldChangeHalf"][value="half1"]');
+            const half2Radio = document.querySelector('input[name="fieldChangeHalf"][value="half2"]');
+
+            if (normalized === 'half1' || normalized === 'half2') {
+                if (halfRadio) halfRadio.checked = true;
+                if (normalized === 'half2' && half2Radio) {
+                    half2Radio.checked = true;
+                } else if (half1Radio) {
+                    half1Radio.checked = true;
+                }
+            } else {
+                if (fullRadio) fullRadio.checked = true;
+                if (half1Radio) half1Radio.checked = true;
+            }
+            updateFieldChangePortionVisibility();
         }
 
         function updateFieldChangeRangeVisibility() {
@@ -2612,6 +2676,9 @@
 
         document.querySelectorAll('input[name="fieldChangeMode"]').forEach(input => {
             input.addEventListener('change', updateFieldChangeRangeVisibility);
+        });
+        document.querySelectorAll('input[name="fieldChangePortion"], input[name="fieldChangeHalf"]').forEach(input => {
+            input.addEventListener('change', updateFieldChangePortionVisibility);
         });
 
         function closeFieldChangeDialog() {
@@ -2645,13 +2712,15 @@
                 year: 'numeric'
             });
             const currentField = booking.field || getFieldOptionText(getBookingFieldId(booking));
+            const currentPortion = normalizeFieldPortion(booking);
 
             if (fieldChangeInfo) {
                 fieldChangeInfo.innerHTML = `
                     <strong>${booking.team}</strong><br>
                     ${dateLabel}<br>
                     ${booking.allDay ? 'Ganzer Tag' : `${booking.startTime} – ${booking.endTime} Uhr`}<br>
-                    Aktuell: ${currentField}
+                    Aktuell: ${currentField}<br>
+                    ${getFieldPortionLabel(currentPortion)}
                 `;
             }
 
@@ -2659,6 +2728,7 @@
                 const currentFieldId = getBookingFieldId(booking);
                 fieldChangeSelect.value = CALENDAR_FIELD_IDS.includes(currentFieldId) ? currentFieldId : '1';
             }
+            setFieldChangePortionInputs(currentPortion);
 
             if (fieldChangeSeriesOptions) {
                 fieldChangeSeriesOptions.style.display = isFixedSeries ? 'flex' : 'none';
@@ -2672,13 +2742,22 @@
             if (fieldChangeOverlay) fieldChangeOverlay.classList.add('active');
         }
 
-        function setSeriesFieldOverrideForId(id, fieldId, fieldText, seriesDef) {
+        function setSeriesFieldOverrideForId(id, fieldId, fieldText, fieldPortion, seriesDef) {
             const overrides = getSeriesFieldOverrides();
             const defaultFieldId = String(getFieldIdFromText(seriesDef.field));
-            if (String(fieldId) === defaultFieldId) {
+            const defaultPortion = normalizeFieldPortion({ fieldPortion: seriesDef.fieldPortion });
+            const nextPortion = normalizeFieldPortion({ fieldPortion });
+            const fieldUnchanged = String(fieldId) === defaultFieldId;
+            const portionUnchanged = nextPortion === defaultPortion;
+
+            if (fieldUnchanged && portionUnchanged) {
                 delete overrides[id];
             } else {
-                overrides[id] = { field: fieldText, fieldId: String(fieldId) };
+                overrides[id] = {
+                    field: fieldText,
+                    fieldId: String(fieldId),
+                    fieldPortion: nextPortion
+                };
             }
             saveSeriesFieldOverrides(overrides);
         }
@@ -2697,8 +2776,10 @@
             const newFieldText = fieldChangeSelect
                 ? fieldChangeSelect.options[fieldChangeSelect.selectedIndex].text
                 : getFieldOptionText(newFieldId);
+            const newPortion = getSelectedFieldChangePortion();
+            const currentPortion = normalizeFieldPortion(booking);
 
-            if (String(getBookingFieldId(booking)) === String(newFieldId)) {
+            if (String(getBookingFieldId(booking)) === String(newFieldId) && currentPortion === newPortion) {
                 closeFieldChangeDialog();
                 return;
             }
@@ -2746,7 +2827,8 @@
                     const updated = {
                         ...seriesBooking,
                         field: newFieldText,
-                        fieldId: newFieldId
+                        fieldId: newFieldId,
+                        fieldPortion: newPortion
                     };
                     if (hasDoubleBooking(updated, idsToChange)) {
                         conflicts.push(seriesBooking.date);
@@ -2759,7 +2841,7 @@
                 }
 
                 idsToChange.forEach(seriesId => {
-                    setSeriesFieldOverrideForId(seriesId, newFieldId, newFieldText, seriesDef);
+                    setSeriesFieldOverrideForId(seriesId, newFieldId, newFieldText, newPortion, seriesDef);
                 });
                 closeFieldChangeDialog();
                 refreshAfterSeriesChange();
@@ -2769,7 +2851,8 @@
             const updatedBooking = {
                 ...booking,
                 field: newFieldText,
-                fieldId: newFieldId
+                fieldId: newFieldId,
+                fieldPortion: newPortion
             };
             if (hasDoubleBooking(updatedBooking, booking.id)) {
                 alert('Platzwechsel nicht möglich – es gibt bereits eine überschneidende Buchung auf diesem Platz.');
