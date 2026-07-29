@@ -477,10 +477,6 @@
         }
 
         @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-
             .hero h1 {
                 font-size: 2rem;
             }
@@ -504,6 +500,7 @@
 
         }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body>
     <!-- Header -->
@@ -513,6 +510,7 @@
                 <img src="assets/logo.png" alt="Sportfreunde Lauffen Logo">
                 <span>Sportfreunde Lauffen</span>
             </a>
+            <button type="button" class="nav-toggle" aria-label="Menü öffnen" aria-expanded="false">☰</button>
             <ul class="nav-links">
                 <li><a href="#features">Funktionen</a></li>
                 <li><a href="#contacts">Ansprechpartner</a></li>
@@ -530,8 +528,7 @@
         <section class="hero">
             <div class="hero-content">
                 <h1>⚽ Ulrichsheide Manager</h1>
-                <p>Die vollständige Lösung für Sportplatz-Verwaltung, Buchungen und Sonstiges.</p
-                </div>
+                <p>Die vollständige Lösung für Sportplatz-Verwaltung, Buchungen und Sonstiges.</p>
             </div>
         </section>
 
@@ -875,6 +872,7 @@
         </div>
     </footer>
 
+    <script src="mobile-nav.js"></script>
     <script src="pwa-register.js"></script>
     <script>
         // Smooth Scrolling
