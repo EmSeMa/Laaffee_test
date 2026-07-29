@@ -112,6 +112,73 @@
         return lines.join('\n');
     }
 
+    function getBookingUserEmail(booking) {
+        const direct = (booking && booking.bookedByEmail || '').trim();
+        if (direct) return direct;
+
+        const userId = booking && booking.bookedByUserId;
+        if (!userId) return '';
+
+        try {
+            const stored = localStorage.getItem('youthCoaches');
+            if (!stored) return '';
+            const users = JSON.parse(stored);
+            if (!Array.isArray(users)) return '';
+            const user = users.find((u) => u && String(u.id) === String(userId));
+            return user && user.email ? String(user.email).trim() : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function buildConfirmationMailBody(booking) {
+        const dateLabel = formatBookingDateRange(booking);
+        const greeting = booking.bookedByName
+            ? `Hallo ${booking.bookedByName},`
+            : 'Hallo,';
+
+        const lines = [
+            greeting,
+            '',
+            'deine Busreservierung wurde bestätigt.',
+            '',
+            `Zeitraum: ${dateLabel}`,
+            `Mannschaft: ${booking.team || '-'}`,
+            `Anlass: ${booking.purpose || '-'}`,
+            `Ziel: ${booking.destination || '-'}`,
+            `Zeit: ${booking.startTime || '-'} - ${booking.endTime || '-'} Uhr`
+        ];
+
+        if (booking.driver) {
+            lines.push(`Fahrer: ${booking.driver}`);
+        }
+
+        lines.push(
+            '',
+            'Bei Rückfragen wende dich bitte an die Jugendleitung.',
+            '',
+            'Sportfreunde Lauffen',
+            getBookingLink()
+        );
+
+        return lines.join('\n');
+    }
+
+    function buildConfirmationMailtoUrl(booking) {
+        const userEmail = getBookingUserEmail(booking);
+        if (!userEmail) return null;
+
+        const dateLabel = formatBookingDateRange(booking);
+        const subject = `Busreservierung bestätigt: ${booking.team || 'Mannschaft'} - ${dateLabel}`;
+        const body = buildConfirmationMailBody(booking);
+
+        let mailto = `mailto:${userEmail}`;
+        mailto += `?subject=${encodeURIComponent(subject)}`;
+        mailto += `&body=${encodeURIComponent(body)}`;
+
+        return mailto;
+    }
+
     function buildMailtoUrl(booking) {
         const admins = getAdminRecipients();
         const dateLabel = formatBookingDateRange(booking);
@@ -177,6 +244,38 @@
         }
     }
 
+    async function notifyConfirmedBusBooking(booking) {
+        if (!booking || booking.status !== 'confirmed') {
+            return { sent: false, reason: 'not-applicable' };
+        }
+
+        if (!isConfigured()) {
+            return { sent: false, reason: 'not-configured' };
+        }
+
+        const userEmail = getBookingUserEmail(booking);
+        if (!userEmail) {
+            return { sent: false, reason: 'no-email' };
+        }
+
+        try {
+            const mailto = buildConfirmationMailtoUrl(booking);
+            if (!mailto) {
+                return { sent: false, reason: 'no-email' };
+            }
+            openMailtoUrl(mailto);
+            return { sent: true, method: 'mailto', mailto: mailto, recipient: userEmail };
+        } catch (err) {
+            console.error('[Bus-Mail] Bestätigungs-mailto fehlgeschlagen:', err);
+            return {
+                sent: false,
+                reason: 'send-failed',
+                mailto: buildConfirmationMailtoUrl(booking),
+                errorText: err.message || String(err)
+            };
+        }
+    }
+
     function processPendingNotifications() {
         // mailto: nur beim Speichern einer neuen Buchung
     }
@@ -184,8 +283,11 @@
     window.SFLBusMail = {
         isConfigured,
         notifyPendingBusBooking,
+        notifyConfirmedBusBooking,
         processPendingNotifications,
         buildMailtoUrl,
+        buildConfirmationMailtoUrl,
+        getBookingUserEmail,
         getAdminRecipients
     };
 })();

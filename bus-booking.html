@@ -1323,11 +1323,66 @@
                 return;
             }
 
+            const booking = bookings.find(b => b.id === id);
+            if (!booking) {
+                alert('Buchung nicht gefunden.');
+                return;
+            }
+
             bookings = bookings.map(b =>
                 b.id === id ? { ...b, status: 'confirmed' } : b
             );
             saveBookings();
             renderBookings();
+
+            const confirmed = bookings.find(b => b.id === id);
+            notifyConfirmedBusBooking(confirmed);
+        }
+
+        async function notifyConfirmedBusBooking(booking) {
+            if (!window.SFLBusMail || !window.SFLBusMail.notifyConfirmedBusBooking) {
+                alert('Buchung bestätigt.');
+                return;
+            }
+
+            const result = await window.SFLBusMail.notifyConfirmedBusBooking(booking);
+
+            if (result.reason === 'no-email') {
+                const name = booking.bookedByName || 'Unbekannt';
+                alert(
+                    `Buchung bestätigt.\n\n` +
+                    `Für „${name}“ ist keine E-Mail-Adresse hinterlegt – ` +
+                    `eine Bestätigungs-Mail konnte nicht vorbereitet werden.\n\n` +
+                    `Bitte E-Mail in der Benutzerverwaltung ergänzen oder den Trainer manuell informieren.`
+                );
+                return;
+            }
+
+            if (result.sent) {
+                alert(
+                    `Buchung bestätigt.\n\n` +
+                    `Dein E-Mail-Programm öffnet die Bestätigung an ${result.recipient || 'den Trainer'}.\n` +
+                    `Bitte dort auf „Senden“ klicken.`
+                );
+                return;
+            }
+
+            let mailto = result.mailto;
+            if (!mailto && window.SFLBusMail.buildConfirmationMailtoUrl) {
+                mailto = window.SFLBusMail.buildConfirmationMailtoUrl(booking);
+            }
+
+            const openMail = mailto && confirm(
+                'Buchung bestätigt.\n\n' +
+                'Das E-Mail-Programm konnte nicht automatisch geöffnet werden.\n' +
+                'Möchtest du die Bestätigungs-Mail jetzt manuell öffnen?'
+            );
+
+            if (openMail && mailto) {
+                window.location.href = mailto;
+            } else {
+                alert('Buchung bestätigt.\n\nDie Bestätigungs-Mail konnte nicht geöffnet werden.');
+            }
         }
 
         function saveBookings() {
