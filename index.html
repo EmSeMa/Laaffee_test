@@ -556,10 +556,10 @@
                 <h3>Benutzerverwaltung</h3>
                 <p>Trainer-Codes, Admin-Rollen und zentraler Vereins-Login über Firebase.</p>
             </a>
-            <a href="analytics.html" class="feature-card" id="analyticsCard" hidden>
-                <div class="feature-icon">📊</div>
-                <h3>Analytics & Berichte</h3>
-                <p>Detaillierte Statistiken über Auslastung und Nutzung.</p>
+            <a href="vereinsverwaltung.html" class="feature-card" id="vereinsverwaltungCard" hidden>
+                <div class="feature-icon">🏛️</div>
+                <h3>Vereinsverwaltung</h3>
+                <p>Admin-Bereich mit Analytics, Berichten und Schlüsselverwaltung.</p>
             </a>
             <a href="event-shifts.html" class="feature-card">
                 <div class="feature-icon">📋</div>
@@ -905,14 +905,14 @@
                 }
             }
 
-            function updateAnalyticsCard() {
-                const card = document.getElementById('analyticsCard');
+            function updateVereinsverwaltungCard() {
+                const card = document.getElementById('vereinsverwaltungCard');
                 if (!card) return;
                 card.hidden = !isAdminUser();
             }
 
-            updateAnalyticsCard();
-            window.addEventListener('storage', updateAnalyticsCard);
+            updateVereinsverwaltungCard();
+            window.addEventListener('storage', updateVereinsverwaltungCard);
         })();
 
     </script>

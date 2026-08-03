@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'sfl-manager-v34';
+const CACHE_VERSION = 'sfl-manager-v35';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const ASSETS_TO_CACHE = [
   './fields.html',
   './users.html',
   './analytics.html',
+  './vereinsverwaltung.html',
+  './schluesselverwaltung.html',
   './event-shifts.html',
   './offline.html',
   './manifest.webmanifest',

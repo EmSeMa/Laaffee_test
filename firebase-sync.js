@@ -12,7 +12,9 @@ const SYNCED_KEYS = {
     'deletedFixedSeriesBookings': 'deletedSeries',
     'seriesFieldOverrides': 'seriesFieldOverrides',
     'eventShiftPlans': 'eventShifts',
-    'customSportFields': 'customFields'
+    'customSportFields': 'customFields',
+    'clubKeys': 'clubKeys',
+    'clubKeysArchive': 'clubKeysArchive'
 };
 
 const SFL = {

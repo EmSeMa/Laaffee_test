@@ -456,6 +456,66 @@
             font-style: italic;
         }
 
+        .archive-toggle-wrap {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e3e3e3;
+        }
+
+        .archive-toggle-btn {
+            width: 100%;
+            background: #eee;
+            color: #444;
+            border: 1px solid #ddd;
+            padding: 0.65rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        .archive-toggle-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .archive-toggle-btn.open {
+            background: #ddd;
+        }
+
+        #archiveList {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 0.75rem;
+            padding-right: 0.35rem;
+        }
+
+        .booking-item.archived {
+            opacity: 0.85;
+            border-left-color: #999;
+        }
+
+        .booking-item.archived .booking-info h4,
+        .booking-item.archived .booking-info p {
+            color: #666;
+        }
+
+        .archive-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            margin-left: 0.4rem;
+            vertical-align: middle;
+            background: #ececec;
+            color: #666;
+        }
+
         .terms-field {
             display: flex;
             align-items: flex-start;
@@ -735,6 +795,10 @@
                 <div id="bookingsList">
                     <div class="empty-message">Keine Bus-Buchungen vorhanden</div>
                 </div>
+                <div class="archive-toggle-wrap" id="archiveToggleWrap" style="display: none;">
+                    <button type="button" class="archive-toggle-btn" id="archiveToggleBtn">📦 Archiv anzeigen</button>
+                    <div id="archiveList" style="display: none;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -906,6 +970,10 @@
         const cancelBtn = document.getElementById('cancelBtn');
         const confirmBtn = document.getElementById('confirmBtn');
         const bookingsList = document.getElementById('bookingsList');
+        const archiveToggleWrap = document.getElementById('archiveToggleWrap');
+        const archiveToggleBtn = document.getElementById('archiveToggleBtn');
+        const archiveList = document.getElementById('archiveList');
+        let archiveOpen = false;
         const teamSelect = document.getElementById('teamSelect');
         const purposeSelect = document.getElementById('purposeSelect');
         const destinationInput = document.getElementById('destinationInput');
@@ -1233,58 +1301,97 @@
             renderCalendar();
         });
 
-        function renderBookings() {
-            const todayStr = formatDate(new Date());
-            const futureBookings = bookings.filter(b => getBookingEndDate(b) >= todayStr);
-
-            if (futureBookings.length === 0) {
-                bookingsList.innerHTML = '<div class="empty-message">Keine Bus-Buchungen vorhanden</div>';
-                return;
-            }
-
-            const sorted = [...futureBookings].sort((a, b) => {
-                const dateCompare = new Date(a.date) - new Date(b.date);
-                if (dateCompare !== 0) return dateCompare;
-                return a.startTime.localeCompare(b.startTime);
-            });
-
-            let html = '';
+        function buildBookingGroupHtml(booking, options = {}) {
+            const { archive = false } = options;
+            const dateStr = formatBookingDateLabel(booking);
+            const isMultiDay = getBookingEndDate(booking) !== booking.date;
+            const isConfirmed = booking.status === 'confirmed';
+            const statusClass = isConfirmed ? 'confirmed' : 'pending';
+            const statusLabel = isConfirmed ? 'Bestätigt' : 'Ausstehend';
             const isAdmin = currentUser && currentUser.role === 'Admin';
 
-            sorted.forEach(booking => {
-                const dateStr = formatBookingDateLabel(booking);
-                const isMultiDay = getBookingEndDate(booking) !== booking.date;
-
-                const isConfirmed = booking.status === 'confirmed';
-                const statusClass = isConfirmed ? 'confirmed' : 'pending';
-                const statusLabel = isConfirmed ? 'Bestätigt' : 'Ausstehend';
+            let actionsHtml = '';
+            if (!archive) {
                 const confirmButton = (!isConfirmed && isAdmin)
                     ? `<button class="booking-confirm" onclick="confirmBooking(${booking.id})">Admin bestätigen</button>`
                     : '';
                 const deleteButton = isAdmin
                     ? `<button class="booking-delete" onclick="deleteBooking(${booking.id})">Löschen</button>`
                     : '';
-                const actionsHtml = (confirmButton || deleteButton)
-                    ? `<div class="booking-actions">${confirmButton}${deleteButton}</div>`
-                    : '';
+                if (confirmButton || deleteButton) {
+                    actionsHtml = `<div class="booking-actions">${confirmButton}${deleteButton}</div>`;
+                }
+            }
 
-                html += `
-                    <div class="booking-day-group">
-                        <h3 class="booking-day-title">📅 ${dateStr}</h3>
-                        <div class="booking-item ${statusClass}">
-                            <div class="booking-info">
-                                <h4>🚌 ${booking.team} – ${booking.purpose}<span class="status-badge ${statusClass}">${statusLabel}</span></h4>
-                                <p>📍 ${booking.destination}</p>
-                                <p>🕐 ${booking.startTime} - ${booking.endTime} Uhr${isMultiDay ? ' (täglich)' : ''}</p>
-                                ${booking.driver ? `<p>👤 Fahrer: ${booking.driver}</p>` : ''}
-                            </div>
-                            ${actionsHtml}
+            const itemClass = archive ? `booking-item archived ${statusClass}` : `booking-item ${statusClass}`;
+            const badgeHtml = archive
+                ? `<span class="archive-badge">Vergangen</span><span class="status-badge ${statusClass}">${statusLabel}</span>`
+                : `<span class="status-badge ${statusClass}">${statusLabel}</span>`;
+
+            return `
+                <div class="booking-day-group">
+                    <h3 class="booking-day-title">📅 ${dateStr}</h3>
+                    <div class="${itemClass}">
+                        <div class="booking-info">
+                            <h4>🚌 ${booking.team} – ${booking.purpose}${badgeHtml}</h4>
+                            <p>📍 ${booking.destination}</p>
+                            <p>🕐 ${booking.startTime} - ${booking.endTime} Uhr${isMultiDay ? ' (täglich)' : ''}</p>
+                            ${booking.driver ? `<p>👤 Fahrer: ${booking.driver}</p>` : ''}
+                            ${booking.bookedByName ? `<p>✍️ Gebucht von: ${booking.bookedByName}</p>` : ''}
                         </div>
+                        ${actionsHtml}
                     </div>
-                `;
-            });
+                </div>
+            `;
+        }
 
-            bookingsList.innerHTML = html;
+        function renderBookings() {
+            const todayStr = formatDate(new Date());
+            const futureBookings = bookings.filter(b => getBookingEndDate(b) >= todayStr);
+            const pastBookings = bookings.filter(b => getBookingEndDate(b) < todayStr);
+
+            if (futureBookings.length === 0) {
+                bookingsList.innerHTML = '<div class="empty-message">Keine aktuellen Bus-Buchungen vorhanden</div>';
+            } else {
+                const sorted = [...futureBookings].sort((a, b) => {
+                    const dateCompare = new Date(a.date) - new Date(b.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    return a.startTime.localeCompare(b.startTime);
+                });
+                bookingsList.innerHTML = sorted.map(b => buildBookingGroupHtml(b)).join('');
+            }
+
+            if (archiveToggleWrap && archiveToggleBtn && archiveList) {
+                if (pastBookings.length === 0) {
+                    archiveToggleWrap.style.display = 'none';
+                    archiveList.style.display = 'none';
+                    archiveOpen = false;
+                } else {
+                    archiveToggleWrap.style.display = 'block';
+                    const toggleLabel = archiveOpen ? 'Archiv ausblenden' : 'Archiv anzeigen';
+                    archiveToggleBtn.textContent = `📦 ${toggleLabel} (${pastBookings.length})`;
+                    archiveToggleBtn.classList.toggle('open', archiveOpen);
+
+                    if (archiveOpen) {
+                        const sortedPast = [...pastBookings].sort((a, b) => {
+                            const dateCompare = new Date(b.date) - new Date(a.date);
+                            if (dateCompare !== 0) return dateCompare;
+                            return b.startTime.localeCompare(a.startTime);
+                        });
+                        archiveList.innerHTML = sortedPast.map(b => buildBookingGroupHtml(b, { archive: true })).join('');
+                        archiveList.style.display = 'block';
+                    } else {
+                        archiveList.style.display = 'none';
+                    }
+                }
+            }
+        }
+
+        if (archiveToggleBtn) {
+            archiveToggleBtn.addEventListener('click', () => {
+                archiveOpen = !archiveOpen;
+                renderBookings();
+            });
         }
 
         function deleteBooking(id) {

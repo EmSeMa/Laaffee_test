@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Schlüsselverwaltung - Sportfreunde Lauffen</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="site-footer.css">
+    <link rel="stylesheet" href="mobile.css">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-gate.js"></script>
+    <script src="firebase-sync.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script>
+        (function () {
+            function isAdminUser() {
+                try {
+                    var id = sessionStorage.getItem('currentUserId');
+                    if (!id) return false;
+                    var stored = localStorage.getItem('youthCoaches');
+                    if (!stored) return false;
+                    var list = JSON.parse(stored);
+                    if (!Array.isArray(list)) return false;
+                    var user = list.find(function (u) {
+                        return String(u.id) === String(id) && u.status === 'active';
+                    });
+                    return !!(user && user.role === 'Admin');
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            if (!isAdminUser()) {
+                alert('Die Schlüsselverwaltung ist nur für Administratoren verfügbar.\nBitte melde dich auf der Benutzerverwaltung als Admin an.');
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 { font-size: 2.2rem; margin-bottom: 0.4rem; }
+        .header p { opacity: 0.9; }
+
+        .back-btn {
+            position: absolute;
+            top: 1.25rem;
+            left: 1.25rem;
+            background: white;
+            color: #000;
+            border: none;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .back-btn:hover { background: #f0f0f0; }
+
+        .content { padding: 2rem; }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stat-box strong {
+            display: block;
+            font-size: 1.8rem;
+            color: #000;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-box span { color: #666; font-size: 0.9rem; }
+
+        .section-block {
+            margin-bottom: 2.5rem;
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .section-head h2 {
+            font-size: 1.25rem;
+            color: #000;
+        }
+
+        .section-head p {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.2rem;
+        }
+
+        .add-btn {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 0.65rem 1.2rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+            white-space: nowrap;
+        }
+
+        .add-btn:hover { background: #333; }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            color: #444;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .filter-tab:hover { background: #e5e5e5; }
+
+        .filter-tab.active {
+            background: #000;
+            color: white;
+            border-color: #000;
+        }
+
+        .keys-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1rem;
+        }
+
+        .key-card {
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.15rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .key-card:hover {
+            border-color: #ccc;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        }
+
+        .key-card.issued {
+            border-left: 4px solid #e65100;
+        }
+
+        .key-card.partial {
+            border-left: 4px solid #f9a825;
+        }
+
+        .key-card.available {
+            border-left: 4px solid #2e7d32;
+        }
+
+        .key-card.selected {
+            border-color: #000;
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.12);
+        }
+
+        .key-card-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .key-card-icon { font-size: 1.4rem; line-height: 1; }
+
+        .key-card-title {
+            font-weight: 700;
+            color: #000;
+            font-size: 1.05rem;
+        }
+
+        .key-card-mark {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #666;
+            margin-top: 0.2rem;
+        }
+
+        .key-kennzeichnung {
+            font-size: 0.88rem;
+            color: #666;
+            margin: 0.15rem 0 0.25rem 0;
+        }
+
+        .key-card-location {
+            color: #666;
+            font-size: 0.88rem;
+        }
+
+        .key-card-quantity {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+            background: #f0f4f8;
+            border-radius: 6px;
+            padding: 0.45rem 0.65rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            align-self: flex-start;
+        }
+
+        .status-badge.partial { background: #fff8e1; color: #f57f17; }
+        .status-badge.available { background: #e8f5e9; color: #2e7d32; }
+        .status-badge.issued { background: #fff3e0; color: #e65100; }
+
+        .key-card-holder {
+            font-size: 0.88rem;
+            color: #444;
+            background: #fafafa;
+            border-radius: 6px;
+            padding: 0.5rem 0.65rem;
+        }
+
+        .key-card-holder strong { color: #000; }
+
+        .key-card-notes {
+            font-size: 0.82rem;
+            color: #777;
+            font-style: italic;
+        }
+
+        .key-card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.35rem;
+        }
+
+        .card-btn {
+            border: none;
+            padding: 0.4rem 0.75rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .card-btn.issue { background: #000; color: white; }
+        .card-btn.issue:hover { background: #333; }
+        .card-btn.return { background: #e8f5e9; color: #2e7d32; }
+        .card-btn.return:hover { background: #c8e6c9; }
+        .card-btn.edit { background: #f0f0f0; color: #333; }
+        .card-btn.edit:hover { background: #e0e0e0; }
+        .card-btn.delete { background: #ffebee; color: #c62828; }
+        .card-btn.delete:hover { background: #ffcdd2; }
+
+        .issued-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .issued-group {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+        }
+
+        .issued-group-header {
+            background: #f8f9fa;
+            padding: 1rem 1.15rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .issued-group-header h4 {
+            font-size: 1.05rem;
+            color: #000;
+            margin-bottom: 0.3rem;
+        }
+
+        .issued-group-header p {
+            font-size: 0.88rem;
+            color: #666;
+            margin: 0.15rem 0;
+        }
+
+        .issued-group-summary {
+            display: inline-block;
+            margin-top: 0.35rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #e65100;
+            background: #fff3e0;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+        }
+
+        .issued-group-summary.person {
+            color: #1565c0;
+            background: #e3f2fd;
+        }
+
+        .issued-item {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.75rem 1rem;
+            align-items: center;
+            padding: 0.9rem 1.15rem;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+
+        .issued-item:last-child { border-bottom: none; }
+
+        .issued-item-info h4 {
+            font-size: 0.95rem;
+            color: #000;
+            margin-bottom: 0.25rem;
+        }
+
+        .issued-item-info p {
+            font-size: 0.88rem;
+            color: #555;
+            margin: 0.15rem 0;
+        }
+
+        .issued-item-actions {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 2.5rem 1rem;
+            font-style: italic;
+            border: 1px dashed #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .dialog-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .dialog-overlay.active { display: flex; }
+
+        .dialog {
+            background: white;
+            border-radius: 10px;
+            padding: 1.75rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .dialog h3 { margin-bottom: 0.5rem; color: #000; }
+
+        .dialog-sub {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .form-field { margin-bottom: 1rem; }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .form-field textarea { resize: vertical; min-height: 70px; }
+
+        .dialog-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .dialog-buttons button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .btn-save { background: #000; color: white; }
+        .btn-save:hover { background: #333; }
+        .btn-cancel-dialog { background: #f0f0f0; color: #333; }
+        .btn-cancel-dialog:hover { background: #e0e0e0; }
+
+        .export-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1.5rem;
+        }
+
+        .export-btn {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 0.65rem 1.2rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .export-btn:hover { background: #333; }
+
+        .archive-toggle-wrap {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .archive-toggle-btn {
+            width: 100%;
+            background: #eee;
+            color: #444;
+            border: 1px solid #ddd;
+            padding: 0.65rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .archive-toggle-btn:hover { background: #e0e0e0; }
+        .archive-toggle-btn.open { background: #ddd; }
+
+        .archive-list {
+            margin-top: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .archive-item {
+            border: 1px solid #e9ecef;
+            border-left: 4px solid #666;
+            border-radius: 8px;
+            padding: 1rem 1.15rem;
+            background: #fafafa;
+        }
+
+        .archive-item h4 {
+            font-size: 1rem;
+            color: #000;
+            margin-bottom: 0.35rem;
+        }
+
+        .archive-item p {
+            font-size: 0.88rem;
+            color: #555;
+            margin: 0.15rem 0;
+        }
+
+        .archive-badge {
+            display: inline-block;
+            margin-top: 0.35rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #2e7d32;
+            background: #e8f5e9;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+        }
+
+        @media (max-width: 700px) {
+            .stats-row { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.7rem; margin-top: 2rem; }
+            .issued-item { grid-template-columns: 1fr; }
+            .issued-item-actions { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="vereinsverwaltung.html" class="back-btn">← Vereinsverwaltung</a>
+            <h1>🔑 Schlüsselverwaltung</h1>
+            <p>Übersicht aller Schlüssel und ausgegebene Exemplare</p>
+        </div>
+
+        <div class="content">
+            <div class="stats-row">
+                <div class="stat-box">
+                    <strong id="statTotal">0</strong>
+                    <span>Exemplare gesamt</span>
+                </div>
+                <div class="stat-box">
+                    <strong id="statIssued">0</strong>
+                    <span>Ausgegeben</span>
+                </div>
+                <div class="stat-box">
+                    <strong id="statAvailable">0</strong>
+                    <span>Verfügbar</span>
+                </div>
+            </div>
+
+            <div class="export-bar">
+                <button type="button" class="export-btn" id="exportExcelBtn">📥 Excel exportieren</button>
+            </div>
+
+            <div class="section-block">
+                <div class="section-head">
+                    <div>
+                        <h2>📋 Schlüssel-Übersicht</h2>
+                        <p>Alle Schlüssel, die im Verein existieren</p>
+                    </div>
+                    <button type="button" class="add-btn" id="addKeyBtn">+ Schlüssel anlegen</button>
+                </div>
+
+                <div class="filter-tabs" id="filterTabs">
+                    <button type="button" class="filter-tab active" data-filter="all">Alle</button>
+                    <button type="button" class="filter-tab" data-filter="available">Verfügbar</button>
+                    <button type="button" class="filter-tab" data-filter="issued">Ausgegeben</button>
+                </div>
+
+                <div class="keys-grid" id="keysGrid">
+                    <div class="empty-state">Noch keine Schlüssel erfasst – lege zuerst Schlüssel in der Übersicht an.</div>
+                </div>
+            </div>
+
+            <div class="section-block">
+                <div class="section-head">
+                    <div>
+                        <h2>🧾 Ausgegebene Schlüssel</h2>
+                        <p id="issuedSectionSubtitle">Gruppiert nach Schlüssel – wer hat welches Exemplar?</p>
+                    </div>
+                </div>
+                <div class="filter-tabs" id="issuedViewTabs">
+                    <button type="button" class="filter-tab active" data-issued-view="key">Pro Schlüssel</button>
+                    <button type="button" class="filter-tab" data-issued-view="person">Pro Person</button>
+                </div>
+                <div class="issued-list" id="issuedList">
+                    <div class="empty-state">Derzeit ist kein Schlüssel ausgegeben.</div>
+                </div>
+
+                <div class="archive-toggle-wrap" id="archiveToggleWrap" style="display: none;">
+                    <button type="button" class="archive-toggle-btn" id="archiveToggleBtn">📦 Archiv anzeigen</button>
+                    <div class="archive-list" id="archiveList" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="keyDialog">
+        <div class="dialog">
+            <h3 id="keyDialogTitle">Schlüssel anlegen</h3>
+            <p class="dialog-sub">Schlüssel in die Übersicht aufnehmen – Ausgabe erfolgt separat.</p>
+            <form id="keyForm">
+                <div class="form-field">
+                    <label for="keyLabel">Schlüsselbezeichnung *</label>
+                    <input type="text" id="keyLabel" required placeholder="z. B. SFL-Lager, Zentralschlüssel, Sportheim">
+                </div>
+                <div class="form-field">
+                    <label for="keyMarkNumber">Kennzeichnungsnummer</label>
+                    <input type="text" id="keyMarkNumber" placeholder="z. B. A44, 046-1149">
+                </div>
+                <div class="form-field">
+                    <label for="keyMarkLabel">Kennzeichnungsbezeichnung</label>
+                    <input type="text" id="keyMarkLabel" placeholder="z. B. Hauptschlüssel Anlage, Nebeneingang">
+                </div>
+                <div class="form-field">
+                    <label for="keyLocation">Standort / Schließanlage</label>
+                    <input type="text" id="keyLocation" placeholder="z. B. Haupteingang, Schlüsselbrett">
+                </div>
+                <div class="form-field">
+                    <label for="keyQuantity">Anzahl im Verein *</label>
+                    <input type="number" id="keyQuantity" required min="1" max="999" value="1" placeholder="Wie viele Exemplare gibt es?">
+                </div>
+                <div class="form-field">
+                    <label for="keyNotes">Notiz</label>
+                    <textarea id="keyNotes" placeholder="Optionale Anmerkungen zum Schlüssel"></textarea>
+                </div>
+                <div class="dialog-buttons">
+                    <button type="button" class="btn-cancel-dialog" id="cancelKeyDialogBtn">Abbrechen</button>
+                    <button type="submit" class="btn-save">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="dialog-overlay" id="issueDialog">
+        <div class="dialog">
+            <h3>Schlüssel ausgeben</h3>
+            <p class="dialog-sub" id="issueKeyName">—</p>
+            <form id="issueForm">
+                <div class="form-field">
+                    <label for="issueQuantity">Anzahl ausgeben *</label>
+                    <input type="number" id="issueQuantity" required min="1" max="999" value="1">
+                    <p class="dialog-sub" id="issueAvailableHint" style="margin-top:0.4rem;margin-bottom:0;"></p>
+                </div>
+                <div class="form-field">
+                    <label for="issueHolder">Inhaber *</label>
+                    <input type="text" id="issueHolder" required placeholder="Name der Person" list="holderSuggestions">
+                    <datalist id="holderSuggestions"></datalist>
+                </div>
+                <div class="form-field">
+                    <label for="issueNotes">Notiz zur Ausgabe</label>
+                    <textarea id="issueNotes" placeholder="z. B. bis Saisonende, für Trainingslager …"></textarea>
+                </div>
+                <div class="dialog-buttons">
+                    <button type="button" class="btn-cancel-dialog" id="cancelIssueDialogBtn">Abbrechen</button>
+                    <button type="submit" class="btn-save">Ausgeben</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'clubKeys';
+        const ARCHIVE_STORAGE_KEY = 'clubKeysArchive';
+        let keys = [];
+        let archive = [];
+        let editingId = null;
+        let issuingId = null;
+        let activeFilter = 'all';
+        let issuedViewMode = 'key';
+        let archiveOpen = false;
+
+        const keysGrid = document.getElementById('keysGrid');
+        const issuedList = document.getElementById('issuedList');
+        const archiveToggleWrap = document.getElementById('archiveToggleWrap');
+        const archiveToggleBtn = document.getElementById('archiveToggleBtn');
+        const archiveList = document.getElementById('archiveList');
+        const issuedViewTabs = document.getElementById('issuedViewTabs');
+        const issuedSectionSubtitle = document.getElementById('issuedSectionSubtitle');
+        const statTotal = document.getElementById('statTotal');
+        const statIssued = document.getElementById('statIssued');
+        const statAvailable = document.getElementById('statAvailable');
+        const filterTabs = document.getElementById('filterTabs');
+        const keyDialog = document.getElementById('keyDialog');
+        const issueDialog = document.getElementById('issueDialog');
+        const keyForm = document.getElementById('keyForm');
+        const issueForm = document.getElementById('issueForm');
+        const keyDialogTitle = document.getElementById('keyDialogTitle');
+        const issueKeyName = document.getElementById('issueKeyName');
+        const keyMarkNumber = document.getElementById('keyMarkNumber');
+        const keyMarkLabel = document.getElementById('keyMarkLabel');
+        const keyLabel = document.getElementById('keyLabel');
+        const keyLocation = document.getElementById('keyLocation');
+        const keyQuantity = document.getElementById('keyQuantity');
+        const keyNotes = document.getElementById('keyNotes');
+        const issueHolder = document.getElementById('issueHolder');
+        const issueQuantity = document.getElementById('issueQuantity');
+        const issueAvailableHint = document.getElementById('issueAvailableHint');
+        const issueNotes = document.getElementById('issueNotes');
+        const holderSuggestions = document.getElementById('holderSuggestions');
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function formatDate(iso) {
+            if (!iso) return '';
+            try {
+                return new Date(iso).toLocaleDateString('de-DE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric'
+                });
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function getMarkNumber(key) {
+            return (key.markNumber || '').trim();
+        }
+
+        function getMarkLabel(key) {
+            return (key.markLabel || '').trim();
+        }
+
+        function renderKennzeichnungHtml(key) {
+            const markNum = getMarkNumber(key);
+            const markLbl = getMarkLabel(key);
+            if (!markNum && !markLbl) return '';
+            const parts = [];
+            if (markNum) parts.push(`Nr. ${escapeHtml(markNum)}`);
+            if (markLbl) parts.push(escapeHtml(markLbl));
+            return `<div class="key-card-mark">${parts.join(' · ')}</div>`;
+        }
+
+        function renderKennzeichnungLine(key) {
+            const markNum = getMarkNumber(key);
+            const markLbl = getMarkLabel(key);
+            if (!markNum && !markLbl) return '';
+            const parts = [];
+            if (markNum) parts.push(`Nr. ${escapeHtml(markNum)}`);
+            if (markLbl) parts.push(escapeHtml(markLbl));
+            return `<p class="key-kennzeichnung">${parts.join(' · ')}</p>`;
+        }
+
+        function formatKeyHeadline(key) {
+            const label = key.label || 'Unbenannt';
+            const markNum = getMarkNumber(key);
+            const markLbl = getMarkLabel(key);
+            if (!markNum && !markLbl) return label;
+            const parts = [];
+            if (markNum) parts.push(markNum);
+            if (markLbl) parts.push(markLbl);
+            return `${label} (${parts.join(' · ')})`;
+        }
+
+        function renderKeyTitleHtml(key) {
+            const label = escapeHtml(key.label || 'Unbenannt');
+            return `<div class="key-card-title">${label}</div>${renderKennzeichnungHtml(key)}`;
+        }
+
+        function renderKeyHeaderHtml(key, icon = '🔑') {
+            const label = escapeHtml(key.label || 'Unbenannt');
+            return `<h4>${icon} ${label}</h4>${renderKennzeichnungLine(key)}`;
+        }
+
+        function getSortedKeys(list) {
+            return [...list].sort((a, b) => {
+                const labelCompare = (a.label || '').localeCompare(b.label || '', 'de');
+                if (labelCompare !== 0) return labelCompare;
+                const markCompare = getMarkNumber(a).localeCompare(getMarkNumber(b), 'de', { numeric: true });
+                if (markCompare !== 0) return markCompare;
+                return getMarkLabel(a).localeCompare(getMarkLabel(b), 'de');
+            });
+        }
+
+        function getQuantity(key) {
+            const q = parseInt(key.quantity, 10);
+            return Number.isFinite(q) && q >= 1 ? q : 1;
+        }
+
+        function getIssuances(key) {
+            return Array.isArray(key.issuances) ? key.issuances : [];
+        }
+
+        function getIssuedCount(key) {
+            return getIssuances(key).reduce((sum, i) => sum + (parseInt(i.quantity, 10) || 1), 0);
+        }
+
+        function getAvailableCount(key) {
+            return Math.max(0, getQuantity(key) - getIssuedCount(key));
+        }
+
+        function hasIssuances(key) {
+            return getIssuedCount(key) > 0;
+        }
+
+        function migrateKey(key) {
+            if (Array.isArray(key.issuances)) return key;
+            const migrated = { ...key, issuances: [] };
+            if (key.status === 'issued' && key.holder) {
+                migrated.issuances = [{
+                    id: Date.now() + Math.random(),
+                    holder: key.holder,
+                    quantity: 1,
+                    issueNotes: key.issueNotes || '',
+                    issuedAt: key.issuedAt || new Date().toISOString()
+                }];
+            }
+            return migrated;
+        }
+
+        function quantitySummary(key) {
+            const total = getQuantity(key);
+            const issued = getIssuedCount(key);
+            const available = getAvailableCount(key);
+            if (issued === 0) {
+                return total === 1 ? '1 Stück im Verein' : `${total} Stück im Verein`;
+            }
+            return `${total} gesamt · ${available} verfügbar · ${issued} ausgegeben`;
+        }
+
+        function getKeyStatus(key) {
+            const available = getAvailableCount(key);
+            const issued = getIssuedCount(key);
+            if (issued === 0) return { class: 'available', label: 'Verfügbar' };
+            if (available === 0) return { class: 'issued', label: 'Alle ausgegeben' };
+            return { class: 'partial', label: 'Teilweise ausgegeben' };
+        }
+
+        function saveKeys() {
+            if (window.SFL) {
+                window.SFL.save(STORAGE_KEY, keys);
+            } else {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
+            }
+        }
+
+        function saveArchive() {
+            if (window.SFL) {
+                window.SFL.save(ARCHIVE_STORAGE_KEY, archive);
+            } else {
+                localStorage.setItem(ARCHIVE_STORAGE_KEY, JSON.stringify(archive));
+            }
+        }
+
+        function loadKeys() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    keys = (JSON.parse(saved) || []).map(migrateKey);
+                } catch (e) {
+                    keys = [];
+                }
+            }
+        }
+
+        function loadArchive() {
+            const saved = localStorage.getItem(ARCHIVE_STORAGE_KEY);
+            if (saved) {
+                try {
+                    archive = JSON.parse(saved) || [];
+                } catch (e) {
+                    archive = [];
+                }
+            }
+        }
+
+        function updateStats() {
+            const totalPieces = keys.reduce((sum, k) => sum + getQuantity(k), 0);
+            const issuedPieces = keys.reduce((sum, k) => sum + getIssuedCount(k), 0);
+            statTotal.textContent = totalPieces;
+            statIssued.textContent = issuedPieces;
+            statAvailable.textContent = totalPieces - issuedPieces;
+        }
+
+        function updateFilterCounts() {
+            const tabs = filterTabs.querySelectorAll('.filter-tab');
+            tabs.forEach(tab => {
+                const filter = tab.dataset.filter;
+                let count = keys.length;
+                if (filter === 'issued') count = keys.filter(hasIssuances).length;
+                if (filter === 'available') count = keys.filter(k => getAvailableCount(k) > 0).length;
+                const labels = { all: 'Alle', available: 'Verfügbar', issued: 'Ausgegeben' };
+                tab.textContent = `${labels[filter]} (${count})`;
+                tab.classList.toggle('active', filter === activeFilter);
+            });
+        }
+
+        function getFilteredKeys() {
+            if (activeFilter === 'issued') return getSortedKeys(keys.filter(hasIssuances));
+            if (activeFilter === 'available') return getSortedKeys(keys.filter(k => getAvailableCount(k) > 0));
+            return getSortedKeys(keys);
+        }
+
+        function renderOverview() {
+            updateStats();
+            updateFilterCounts();
+
+            const filtered = getFilteredKeys();
+
+            if (keys.length === 0) {
+                keysGrid.innerHTML = '<div class="empty-state">Noch keine Schlüssel erfasst – lege zuerst Schlüssel in der Übersicht an.</div>';
+                return;
+            }
+
+            if (filtered.length === 0) {
+                keysGrid.innerHTML = '<div class="empty-state">Keine Schlüssel in dieser Ansicht.</div>';
+                return;
+            }
+
+            keysGrid.innerHTML = filtered.map(key => {
+                const status = getKeyStatus(key);
+                const available = getAvailableCount(key);
+                const issueNote = key.notes ? `<div class="key-card-notes">${escapeHtml(key.notes)}</div>` : '';
+
+                const issueBtn = available > 0
+                    ? `<button type="button" class="card-btn issue" data-issue="${key.id}">Ausgeben</button>`
+                    : '';
+                const deleteBtn = !hasIssuances(key)
+                    ? `<button type="button" class="card-btn delete" data-delete="${key.id}">Löschen</button>`
+                    : '';
+
+                const actions = `${issueBtn}
+                       <button type="button" class="card-btn edit" data-edit="${key.id}">Bearbeiten</button>
+                       ${deleteBtn}`;
+
+                return `
+                    <div class="key-card ${status.class}" data-key-id="${key.id}">
+                        <div class="key-card-top">
+                            <span class="key-card-icon">🔑</span>
+                            <div>
+                                ${renderKeyTitleHtml(key)}
+                                ${key.location ? `<div class="key-card-location">${escapeHtml(key.location)}</div>` : ''}
+                            </div>
+                        </div>
+                        <div class="key-card-quantity">📦 ${quantitySummary(key)}</div>
+                        <span class="status-badge ${status.class}">${status.label}</span>
+                        ${issueNote}
+                        <div class="key-card-actions">${actions}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderIssuedByKey() {
+            const keysWithIssuances = getSortedKeys(keys.filter(hasIssuances));
+
+            if (keysWithIssuances.length === 0) {
+                issuedList.innerHTML = '<div class="empty-state">Derzeit ist kein Schlüssel ausgegeben.</div>';
+                return;
+            }
+
+            issuedList.innerHTML = keysWithIssuances.map(key => {
+                const issuances = [...getIssuances(key)].sort((a, b) =>
+                    (b.issuedAt || '').localeCompare(a.issuedAt || '')
+                );
+                const issuedTotal = getIssuedCount(key);
+                const issuedLabel = issuedTotal === 1 ? '1 Stück ausgegeben' : `${issuedTotal} Stück ausgegeben`;
+
+                const rows = issuances.map(issuance => {
+                    const qty = parseInt(issuance.quantity, 10) || 1;
+                    const qtyLabel = qty === 1 ? '1 Stück' : `${qty} Stück`;
+                    return `
+                        <div class="issued-item">
+                            <div class="issued-item-info">
+                                <h4>👤 ${escapeHtml(issuance.holder) || 'Unbekannt'}</h4>
+                                <p>📦 ${qtyLabel}</p>
+                                ${issuance.issuedAt ? `<p>📅 Ausgegeben am ${formatDate(issuance.issuedAt)}</p>` : ''}
+                                ${issuance.issueNotes ? `<p>📝 ${escapeHtml(issuance.issueNotes)}</p>` : ''}
+                            </div>
+                            <div class="issued-item-actions">
+                                <button type="button" class="card-btn return" data-return-key="${key.id}" data-return-issuance="${issuance.id}">Zurückgeben</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div class="issued-group">
+                        <div class="issued-group-header">
+                            ${renderKeyHeaderHtml(key)}
+                            ${key.location ? `<p>📍 ${escapeHtml(key.location)}</p>` : ''}
+                            <span class="issued-group-summary">${issuedLabel} · ${quantitySummary(key)}</span>
+                        </div>
+                        ${rows}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getIssuancesByPerson() {
+            const map = new Map();
+            keys.forEach(key => {
+                getIssuances(key).forEach(issuance => {
+                    const holder = (issuance.holder || 'Unbekannt').trim() || 'Unbekannt';
+                    if (!map.has(holder)) map.set(holder, []);
+                    map.get(holder).push({ key, issuance });
+                });
+            });
+            return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'de'));
+        }
+
+        function renderIssuedByPerson() {
+            const groups = getIssuancesByPerson();
+
+            if (groups.length === 0) {
+                issuedList.innerHTML = '<div class="empty-state">Derzeit ist kein Schlüssel ausgegeben.</div>';
+                return;
+            }
+
+            issuedList.innerHTML = groups.map(([holder, entries]) => {
+                const totalQty = entries.reduce((sum, e) => sum + (parseInt(e.issuance.quantity, 10) || 1), 0);
+                const summaryLabel = totalQty === 1
+                    ? '1 Schlüssel ausgegeben'
+                    : `${totalQty} Schlüssel ausgegeben`;
+
+                const rows = entries
+                    .sort((a, b) => {
+                        const labelCompare = (a.key.label || '').localeCompare(b.key.label || '', 'de');
+                        if (labelCompare !== 0) return labelCompare;
+                        const markCompare = getMarkNumber(a.key).localeCompare(getMarkNumber(b.key), 'de', { numeric: true });
+                        if (markCompare !== 0) return markCompare;
+                        return getMarkLabel(a.key).localeCompare(getMarkLabel(b.key), 'de');
+                    })
+                    .map(({ key, issuance }) => {
+                        const qty = parseInt(issuance.quantity, 10) || 1;
+                        const qtyLabel = qty === 1 ? '1 Stück' : `${qty} Stück`;
+                        return `
+                            <div class="issued-item">
+                                <div class="issued-item-info">
+                                    ${renderKeyHeaderHtml(key)}
+                                    ${key.location ? `<p>📍 ${escapeHtml(key.location)}</p>` : ''}
+                                    <p>📦 ${qtyLabel}</p>
+                                    ${issuance.issuedAt ? `<p>📅 Ausgegeben am ${formatDate(issuance.issuedAt)}</p>` : ''}
+                                    ${issuance.issueNotes ? `<p>📝 ${escapeHtml(issuance.issueNotes)}</p>` : ''}
+                                </div>
+                                <div class="issued-item-actions">
+                                    <button type="button" class="card-btn return" data-return-key="${key.id}" data-return-issuance="${issuance.id}">Zurückgeben</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                return `
+                    <div class="issued-group">
+                        <div class="issued-group-header">
+                            <h4>👤 ${escapeHtml(holder)}</h4>
+                            <span class="issued-group-summary person">${summaryLabel}</span>
+                        </div>
+                        ${rows}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateIssuedViewTabs() {
+            if (!issuedViewTabs) return;
+            issuedViewTabs.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.issuedView === issuedViewMode);
+            });
+            if (issuedSectionSubtitle) {
+                issuedSectionSubtitle.textContent = issuedViewMode === 'person'
+                    ? 'Gruppiert nach Person – welche Schlüssel hat wer?'
+                    : 'Gruppiert nach Schlüssel – wer hat welches Exemplar?';
+            }
+        }
+
+        function renderIssuedList() {
+            updateIssuedViewTabs();
+            if (issuedViewMode === 'person') {
+                renderIssuedByPerson();
+            } else {
+                renderIssuedByKey();
+            }
+        }
+
+        function renderAll() {
+            renderOverview();
+            renderIssuedList();
+            renderArchive();
+            updateHolderSuggestions();
+        }
+
+        function renderArchive() {
+            if (!archiveToggleWrap || !archiveToggleBtn || !archiveList) return;
+
+            if (archive.length === 0) {
+                archiveToggleWrap.style.display = 'none';
+                archiveList.style.display = 'none';
+                archiveOpen = false;
+                return;
+            }
+
+            archiveToggleWrap.style.display = 'block';
+            const toggleLabel = archiveOpen ? 'Archiv ausblenden' : 'Archiv anzeigen';
+            archiveToggleBtn.textContent = `📦 ${toggleLabel} (${archive.length})`;
+            archiveToggleBtn.classList.toggle('open', archiveOpen);
+
+            if (!archiveOpen) {
+                archiveList.style.display = 'none';
+                return;
+            }
+
+            const sorted = [...archive].sort((a, b) =>
+                (b.returnedAt || '').localeCompare(a.returnedAt || '')
+            );
+
+            archiveList.innerHTML = sorted.map(entry => {
+                const qty = parseInt(entry.quantity, 10) || 1;
+                const qtyLabel = qty === 1 ? '1 Stück' : `${qty} Stück`;
+                return `
+                    <div class="archive-item">
+                        ${renderKeyHeaderHtml({ label: entry.keyLabel, markNumber: entry.keyMarkNumber, markLabel: entry.keyMarkLabel })}
+                        ${entry.keyLocation ? `<p>📍 ${escapeHtml(entry.keyLocation)}</p>` : ''}
+                        <p>👤 ${escapeHtml(entry.holder) || 'Unbekannt'} · 📦 ${qtyLabel}</p>
+                        ${entry.issuedAt ? `<p>📅 Ausgegeben: ${formatDate(entry.issuedAt)}</p>` : ''}
+                        ${entry.returnedAt ? `<p>✅ Zurückgegeben: ${formatDate(entry.returnedAt)}</p>` : ''}
+                        ${entry.issueNotes ? `<p>📝 ${escapeHtml(entry.issueNotes)}</p>` : ''}
+                        <span class="archive-badge">Rückgabe bestätigt</span>
+                    </div>
+                `;
+            }).join('');
+            archiveList.style.display = 'flex';
+        }
+
+        function addToArchive(key, issuance) {
+            archive.unshift({
+                id: Date.now(),
+                keyId: key.id,
+                keyLabel: key.label,
+                keyMarkNumber: getMarkNumber(key),
+                keyMarkLabel: getMarkLabel(key),
+                keyLocation: key.location || '',
+                holder: issuance.holder || '',
+                quantity: parseInt(issuance.quantity, 10) || 1,
+                issueNotes: issuance.issueNotes || '',
+                issuedAt: issuance.issuedAt || null,
+                returnedAt: new Date().toISOString()
+            });
+            saveArchive();
+        }
+
+        function buildOverviewSheetRows() {
+            const rows = [[
+                'Schlüsselbezeichnung', 'Kennzeichnungsnummer', 'Kennzeichnungsbezeichnung', 'Standort', 'Anzahl gesamt', 'Verfügbar', 'Ausgegeben', 'Status', 'Notiz'
+            ]];
+            getSortedKeys(keys).forEach(key => {
+                const status = getKeyStatus(key);
+                rows.push([
+                    key.label || '',
+                    getMarkNumber(key),
+                    getMarkLabel(key),
+                    key.location || '',
+                    getQuantity(key),
+                    getAvailableCount(key),
+                    getIssuedCount(key),
+                    status.label,
+                    key.notes || ''
+                ]);
+            });
+            return rows;
+        }
+
+        function buildIssuedSheetRows() {
+            const rows = [[
+                'Schlüsselbezeichnung', 'Kennzeichnungsnummer', 'Kennzeichnungsbezeichnung', 'Standort', 'Inhaber', 'Anzahl', 'Ausgegeben am', 'Notiz zur Ausgabe'
+            ]];
+            getSortedKeys(keys).forEach(key => {
+                getIssuances(key).forEach(issuance => {
+                    rows.push([
+                        key.label || '',
+                        getMarkNumber(key),
+                        getMarkLabel(key),
+                        key.location || '',
+                        issuance.holder || '',
+                        parseInt(issuance.quantity, 10) || 1,
+                        formatDate(issuance.issuedAt),
+                        issuance.issueNotes || ''
+                    ]);
+                });
+            });
+            rows.sort((a, b) => {
+                if (a[0] === 'Schlüsselbezeichnung') return -1;
+                if (b[0] === 'Schlüsselbezeichnung') return 1;
+                const personCompare = String(a[4]).localeCompare(String(b[4]), 'de');
+                if (personCompare !== 0) return personCompare;
+                const labelCompare = String(a[0]).localeCompare(String(b[0]), 'de');
+                if (labelCompare !== 0) return labelCompare;
+                return String(a[1]).localeCompare(String(b[1]), 'de', { numeric: true });
+            });
+            return rows;
+        }
+
+        function buildArchiveSheetRows() {
+            const rows = [[
+                'Schlüsselbezeichnung', 'Kennzeichnungsnummer', 'Kennzeichnungsbezeichnung', 'Standort', 'Inhaber', 'Anzahl', 'Ausgegeben am', 'Zurückgegeben am', 'Notiz'
+            ]];
+            [...archive].sort((a, b) => (b.returnedAt || '').localeCompare(a.returnedAt || '')).forEach(entry => {
+                rows.push([
+                    entry.keyLabel || '',
+                    entry.keyMarkNumber || '',
+                    entry.keyMarkLabel || '',
+                    entry.keyLocation || '',
+                    entry.holder || '',
+                    parseInt(entry.quantity, 10) || 1,
+                    formatDate(entry.issuedAt),
+                    formatDate(entry.returnedAt),
+                    entry.issueNotes || ''
+                ]);
+            });
+            return rows;
+        }
+
+        function exportExcel() {
+            if (typeof XLSX === 'undefined') {
+                alert('Excel-Bibliothek nicht geladen. Bitte Seite neu laden.');
+                return;
+            }
+            if (keys.length === 0) {
+                alert('Keine Schlüssel zum Exportieren vorhanden.');
+                return;
+            }
+
+            const wb = XLSX.utils.book_new();
+
+            const overviewRows = buildOverviewSheetRows();
+            const wsOverview = XLSX.utils.aoa_to_sheet(overviewRows);
+            wsOverview['!cols'] = [
+                { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 28 }, { wch: 14 }, { wch: 12 }, { wch: 12 }, { wch: 20 }, { wch: 30 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsOverview, 'Schlüssel-Übersicht');
+
+            const issuedRows = buildIssuedSheetRows();
+            const wsIssued = XLSX.utils.aoa_to_sheet(issuedRows);
+            wsIssued['!cols'] = [
+                { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 30 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsIssued, 'Ausgegeben');
+
+            if (archive.length > 0) {
+                const archiveRows = buildArchiveSheetRows();
+                const wsArchive = XLSX.utils.aoa_to_sheet(archiveRows);
+                wsArchive['!cols'] = [
+                    { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 28 }, { wch: 22 }, { wch: 10 }, { wch: 14 }, { wch: 16 }, { wch: 30 }
+                ];
+                XLSX.utils.book_append_sheet(wb, wsArchive, 'Archiv');
+            }
+
+            const dateStr = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `schluesselverwaltung_${dateStr}.xlsx`);
+        }
+
+        function updateHolderSuggestions() {
+            const names = new Set();
+            try {
+                const stored = localStorage.getItem('youthCoaches');
+                if (stored) {
+                    JSON.parse(stored).forEach(u => {
+                        if (u && u.status === 'active' && u.name) names.add(u.name);
+                    });
+                }
+            } catch (e) {}
+            keys.forEach(k => {
+                getIssuances(k).forEach(i => { if (i.holder) names.add(i.holder); });
+            });
+            holderSuggestions.innerHTML = [...names].sort((a, b) => a.localeCompare(b, 'de'))
+                .map(n => `<option value="${escapeHtml(n)}">`).join('');
+        }
+
+        function openKeyDialog(key) {
+            editingId = key ? key.id : null;
+            keyDialogTitle.textContent = key ? 'Schlüssel bearbeiten' : 'Schlüssel anlegen';
+            keyMarkNumber.value = key ? getMarkNumber(key) : '';
+            keyMarkLabel.value = key ? getMarkLabel(key) : '';
+            keyLabel.value = key ? key.label : '';
+            keyLocation.value = key ? (key.location || '') : '';
+            keyQuantity.value = key ? getQuantity(key) : 1;
+            keyNotes.value = key ? (key.notes || '') : '';
+            keyDialog.classList.add('active');
+            keyLabel.focus();
+        }
+
+        function closeKeyDialog() {
+            keyDialog.classList.remove('active');
+            editingId = null;
+            keyForm.reset();
+        }
+
+        function openIssueDialog(key) {
+            const available = getAvailableCount(key);
+            if (available <= 0) {
+                alert('Keine Exemplare mehr verfügbar.');
+                return;
+            }
+            issuingId = key.id;
+            issueKeyName.textContent = `Schlüsselbezeichnung: ${key.label || '–'}${getMarkNumber(key) || getMarkLabel(key) ? ' · Kennzeichnung: ' + [getMarkNumber(key), getMarkLabel(key)].filter(Boolean).join(' · ') : ''}${key.location ? ' · ' + key.location : ''}`;
+            issueQuantity.max = available;
+            issueQuantity.value = 1;
+            issueAvailableHint.textContent = `Noch ${available} von ${getQuantity(key)} Stück verfügbar`;
+            issueHolder.value = '';
+            issueNotes.value = '';
+            issueDialog.classList.add('active');
+            issueQuantity.focus();
+        }
+
+        function closeIssueDialog() {
+            issueDialog.classList.remove('active');
+            issuingId = null;
+            issueForm.reset();
+        }
+
+        function returnIssuance(keyId, issuanceId) {
+            const key = keys.find(k => k.id === keyId);
+            if (!key) return;
+            const issuance = getIssuances(key).find(i => i.id === issuanceId);
+            if (!issuance) return;
+            const qty = parseInt(issuance.quantity, 10) || 1;
+            const qtyLabel = qty === 1 ? '1 Stück' : `${qty} Stück`;
+            if (!confirm(`${qtyLabel} „${formatKeyHeadline(key)}" von ${issuance.holder || 'Unbekannt'} zurückgeben?`)) return;
+
+            keys = keys.map(k => k.id === keyId ? {
+                ...k,
+                issuances: getIssuances(k).filter(i => i.id !== issuanceId),
+                updatedAt: new Date().toISOString()
+            } : k);
+
+            addToArchive(key, issuance);
+            saveKeys();
+            archiveOpen = true;
+            renderAll();
+
+            alert(`${qtyLabel} „${formatKeyHeadline(key)}" wurde zurückgegeben.\n\nDie Rückgabe wurde im Archiv gespeichert.`);
+        }
+
+        filterTabs.addEventListener('click', (e) => {
+            const tab = e.target.closest('.filter-tab');
+            if (!tab) return;
+            activeFilter = tab.dataset.filter;
+            renderOverview();
+        });
+
+        if (issuedViewTabs) {
+            issuedViewTabs.addEventListener('click', (e) => {
+                const tab = e.target.closest('[data-issued-view]');
+                if (!tab) return;
+                issuedViewMode = tab.dataset.issuedView;
+                renderIssuedList();
+            });
+        }
+
+        if (archiveToggleBtn) {
+            archiveToggleBtn.addEventListener('click', () => {
+                archiveOpen = !archiveOpen;
+                renderArchive();
+            });
+        }
+
+        document.getElementById('addKeyBtn').addEventListener('click', () => openKeyDialog(null));
+        document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
+        document.getElementById('cancelKeyDialogBtn').addEventListener('click', closeKeyDialog);
+        document.getElementById('cancelIssueDialogBtn').addEventListener('click', closeIssueDialog);
+
+        keyDialog.addEventListener('click', (e) => { if (e.target === keyDialog) closeKeyDialog(); });
+        issueDialog.addEventListener('click', (e) => { if (e.target === issueDialog) closeIssueDialog(); });
+
+        keyForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const markNumber = keyMarkNumber.value.trim();
+            const markLabel = keyMarkLabel.value.trim();
+            const label = keyLabel.value.trim();
+            if (!label) {
+                alert('Bitte eine Schlüsselbezeichnung eingeben.');
+                return;
+            }
+
+            const quantity = parseInt(keyQuantity.value, 10);
+            if (!Number.isFinite(quantity) || quantity < 1) {
+                alert('Bitte eine gültige Anzahl (mindestens 1) eingeben.');
+                return;
+            }
+
+            if (editingId) {
+                const existing = keys.find(k => k.id === editingId);
+                const minQty = existing ? getIssuedCount(existing) : 1;
+                if (quantity < minQty) {
+                    alert(`Anzahl darf nicht unter ${minQty} liegen – ${minQty} Stück sind derzeit ausgegeben.`);
+                    return;
+                }
+            }
+
+            const entry = {
+                markNumber,
+                markLabel,
+                label,
+                location: keyLocation.value.trim(),
+                quantity,
+                notes: keyNotes.value.trim(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (editingId) {
+                keys = keys.map(k => k.id === editingId ? { ...k, ...entry } : k);
+            } else {
+                keys.push({
+                    id: Date.now(),
+                    issuances: [],
+                    ...entry
+                });
+            }
+
+            saveKeys();
+            renderAll();
+            closeKeyDialog();
+        });
+
+        issueForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const holder = issueHolder.value.trim();
+            if (!holder) {
+                alert('Bitte einen Inhaber eingeben.');
+                return;
+            }
+            if (!issuingId) return;
+
+            const key = keys.find(k => k.id === issuingId);
+            if (!key) return;
+
+            const available = getAvailableCount(key);
+            const qty = parseInt(issueQuantity.value, 10);
+            if (!Number.isFinite(qty) || qty < 1) {
+                alert('Bitte eine gültige Anzahl eingeben.');
+                return;
+            }
+            if (qty > available) {
+                alert(`Nur noch ${available} Stück verfügbar.`);
+                return;
+            }
+
+            const newIssuance = {
+                id: Date.now(),
+                holder,
+                quantity: qty,
+                issueNotes: issueNotes.value.trim(),
+                issuedAt: new Date().toISOString()
+            };
+
+            keys = keys.map(k => k.id === issuingId ? {
+                ...k,
+                issuances: [...getIssuances(k), newIssuance],
+                updatedAt: new Date().toISOString()
+            } : k);
+
+            saveKeys();
+            activeFilter = 'issued';
+            renderAll();
+            closeIssueDialog();
+        });
+
+        function handleActionClick(e) {
+            const issueBtn = e.target.closest('[data-issue]');
+            const returnBtn = e.target.closest('[data-return-key]');
+            const editBtn = e.target.closest('[data-edit]');
+            const deleteBtn = e.target.closest('[data-delete]');
+
+            if (issueBtn) {
+                const key = keys.find(k => k.id === Number(issueBtn.dataset.issue));
+                if (key) openIssueDialog(key);
+            }
+
+            if (returnBtn) {
+                returnIssuance(
+                    Number(returnBtn.dataset.returnKey),
+                    Number(returnBtn.dataset.returnIssuance)
+                );
+            }
+
+            if (editBtn) {
+                const key = keys.find(k => k.id === Number(editBtn.dataset.edit));
+                if (key) openKeyDialog(key);
+            }
+
+            if (deleteBtn) {
+                const id = Number(deleteBtn.dataset.delete);
+                const key = keys.find(k => k.id === id);
+                if (!key) return;
+                if (hasIssuances(key)) {
+                    alert('Schlüssel mit ausgegebenen Exemplaren können nicht gelöscht werden. Bitte zuerst zurückgeben.');
+                    return;
+                }
+                if (confirm(`Schlüssel „${formatKeyHeadline(key)}" wirklich löschen?`)) {
+                    keys = keys.filter(k => k.id !== id);
+                    saveKeys();
+                    renderAll();
+                }
+            }
+        }
+
+        keysGrid.addEventListener('click', handleActionClick);
+        issuedList.addEventListener('click', handleActionClick);
+
+        if (window.SFL) {
+            window.SFL.subscribe(STORAGE_KEY, (data) => {
+                keys = Array.isArray(data) ? data.map(migrateKey) : [];
+                renderAll();
+            });
+            window.SFL.subscribe(ARCHIVE_STORAGE_KEY, (data) => {
+                archive = Array.isArray(data) ? data : [];
+                renderArchive();
+            });
+        }
+
+        loadKeys();
+        loadArchive();
+        keys = keys.map(migrateKey);
+        renderAll();
+    </script>
+</body>
+</html>

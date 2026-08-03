@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vereinsverwaltung - Sportfreunde Lauffen</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="site-footer.css">
+    <link rel="stylesheet" href="mobile.css">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SFL Manager">
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="auth-gate.js"></script>
+    <script src="firebase-sync.js"></script>
+    <script>
+        (function () {
+            function isAdminUser() {
+                try {
+                    var id = sessionStorage.getItem('currentUserId');
+                    if (!id) return false;
+                    var stored = localStorage.getItem('youthCoaches');
+                    if (!stored) return false;
+                    var list = JSON.parse(stored);
+                    if (!Array.isArray(list)) return false;
+                    var user = list.find(function (u) {
+                        return String(u.id) === String(id) && u.status === 'active';
+                    });
+                    return !!(user && user.role === 'Admin');
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            if (!isAdminUser()) {
+                alert('Die Vereinsverwaltung ist nur für Administratoren verfügbar.\nBitte melde dich auf der Benutzerverwaltung als Admin an.');
+                window.location.replace('index.html');
+            }
+        })();
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #333333 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.05rem;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 1.25rem;
+            left: 1.25rem;
+            background: white;
+            color: #000000;
+            border: none;
+            padding: 0.55rem 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .back-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .content {
+            padding: 2.5rem 2rem 3rem;
+        }
+
+        .content > p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+        }
+
+        .areas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .area-card {
+            background: #ffffff;
+            padding: 2rem 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #e9ecef;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .area-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+            background: #fafafa;
+            border-color: #000000;
+        }
+
+        .area-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .area-card h3 {
+            color: #000000;
+            margin-bottom: 0.75rem;
+            font-size: 1.4rem;
+        }
+
+        .area-card p {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8rem;
+                margin-top: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">← Startseite</a>
+            <h1>🏛️ Vereinsverwaltung</h1>
+            <p>Admin-Bereich für interne Vereinsfunktionen</p>
+        </div>
+
+        <div class="content">
+            <p>Wähle einen Bereich aus:</p>
+            <div class="areas-grid">
+                <a href="analytics.html" class="area-card">
+                    <div class="area-icon">📊</div>
+                    <h3>Analytics &amp; Berichte</h3>
+                    <p>Detaillierte Statistiken über Auslastung und Nutzung von Sportplätzen und Bus.</p>
+                </a>
+                <a href="schluesselverwaltung.html" class="area-card">
+                    <div class="area-icon">🔑</div>
+                    <h3>Schlüsselverwaltung</h3>
+                    <p>Übersicht aller Vereinsschlüssel – wer hat welchen Schlüssel und wo er sich befindet.</p>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
