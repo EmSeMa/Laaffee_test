@@ -254,20 +254,16 @@
         }
 
         .key-card-location {
-            color: #333;
-            font-size: 0.9rem;
-            font-weight: 700;
+            color: #666;
+            font-size: 0.88rem;
+            font-weight: 400;
         }
 
         .key-location-line {
             font-size: 0.88rem;
-            color: #555;
+            color: #666;
             margin: 0.15rem 0;
-        }
-
-        .key-location-line .key-location {
-            font-weight: 700;
-            color: #000;
+            font-weight: 400;
         }
 
         .key-card-quantity {
@@ -826,12 +822,6 @@
             return parts;
         }
 
-        function renderKennzeichnungHtml(key, showNumber = false) {
-            const parts = buildKennzeichnungParts(key, showNumber);
-            if (parts.length === 0) return '';
-            return `<div class="key-card-mark">${parts.join(' · ')}</div>`;
-        }
-
         function renderKennzeichnungLine(key) {
             const parts = buildKennzeichnungParts(key, true);
             if (parts.length === 0) return '';
@@ -840,7 +830,7 @@
 
         function renderLocationLine(location) {
             if (!location) return '';
-            return `<p class="key-location-line">📍 <span class="key-location">${escapeHtml(location)}</span></p>`;
+            return `<p class="key-location-line">📍 ${escapeHtml(location)}</p>`;
         }
 
         function formatKeyHeadline(key) {
@@ -856,7 +846,7 @@
 
         function renderKeyTitleHtml(key) {
             const label = escapeHtml(key.label || 'Unbenannt');
-            return `<div class="key-card-title">${label}</div>${renderKennzeichnungHtml(key)}`;
+            return `<div class="key-card-title">${label}</div>`;
         }
 
         function renderKeyHeaderHtml(key, icon = '🔑') {
