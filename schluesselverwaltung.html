@@ -602,6 +602,32 @@
             background: #ffcdd2;
         }
 
+        .search-field-wrap {
+            margin-bottom: 1rem;
+        }
+
+        .search-field-wrap label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.35rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #000;
+        }
+
         @media (max-width: 700px) {
             .stats-row { grid-template-columns: 1fr; }
             .header h1 { font-size: 1.7rem; margin-top: 2rem; }
@@ -668,6 +694,10 @@
                 <div class="filter-tabs" id="issuedViewTabs">
                     <button type="button" class="filter-tab active" data-issued-view="key">Pro Schlüssel</button>
                     <button type="button" class="filter-tab" data-issued-view="person">Pro Person</button>
+                </div>
+                <div class="search-field-wrap">
+                    <label for="issuedSearchInput">Nach Name suchen</label>
+                    <input type="search" id="issuedSearchInput" class="search-input" placeholder="z. B. Achim, Patrick, …" autocomplete="off">
                 </div>
                 <div class="issued-list" id="issuedList">
                     <div class="empty-state">Derzeit ist kein Schlüssel ausgegeben.</div>
@@ -755,9 +785,11 @@
         let activeFilter = 'all';
         let issuedViewMode = 'key';
         let archiveOpen = false;
+        let issuedSearchQuery = '';
 
         const keysGrid = document.getElementById('keysGrid');
         const issuedList = document.getElementById('issuedList');
+        const issuedSearchInput = document.getElementById('issuedSearchInput');
         const archiveToggleWrap = document.getElementById('archiveToggleWrap');
         const archiveToggleBtn = document.getElementById('archiveToggleBtn');
         const archiveList = document.getElementById('archiveList');
@@ -1035,6 +1067,21 @@
             }).join('');
         }
 
+        function normalizeSearch(str) {
+            return String(str || '').trim().toLowerCase();
+        }
+
+        function matchesNameSearch(name) {
+            const query = normalizeSearch(issuedSearchQuery);
+            if (!query) return true;
+            return normalizeSearch(name).includes(query);
+        }
+
+        function renderNoSearchResults(message) {
+            const query = escapeHtml(issuedSearchQuery.trim());
+            return `<div class="empty-state">${message}${query ? `: „${query}"` : ''}</div>`;
+        }
+
         function renderIssuedByKey() {
             const keysWithIssuances = getSortedKeys(keys.filter(hasIssuances));
 
@@ -1043,11 +1090,20 @@
                 return;
             }
 
-            issuedList.innerHTML = keysWithIssuances.map(key => {
-                const issuances = [...getIssuances(key)].sort((a, b) =>
-                    (b.issuedAt || '').localeCompare(a.issuedAt || '')
-                );
-                const issuedTotal = getIssuedCount(key);
+            const groups = keysWithIssuances.map(key => {
+                const issuances = [...getIssuances(key)]
+                    .filter(i => matchesNameSearch(i.holder))
+                    .sort((a, b) => (b.issuedAt || '').localeCompare(a.issuedAt || ''));
+                return { key, issuances };
+            }).filter(group => group.issuances.length > 0);
+
+            if (groups.length === 0) {
+                issuedList.innerHTML = renderNoSearchResults('Keine ausgegebenen Schlüssel für diesen Namen gefunden');
+                return;
+            }
+
+            issuedList.innerHTML = groups.map(({ key, issuances }) => {
+                const issuedTotal = issuances.reduce((sum, i) => sum + (parseInt(i.quantity, 10) || 1), 0);
                 const issuedLabel = issuedTotal === 1 ? '1 Stück ausgegeben' : `${issuedTotal} Stück ausgegeben`;
 
                 const rows = issuances.map(issuance => {
@@ -1094,10 +1150,15 @@
         }
 
         function renderIssuedByPerson() {
-            const groups = getIssuancesByPerson();
+            const groups = getIssuancesByPerson().filter(([holder]) => matchesNameSearch(holder));
+
+            if (getIssuancesByPerson().length === 0) {
+                issuedList.innerHTML = '<div class="empty-state">Derzeit ist kein Schlüssel ausgegeben.</div>';
+                return;
+            }
 
             if (groups.length === 0) {
-                issuedList.innerHTML = '<div class="empty-state">Derzeit ist kein Schlüssel ausgegeben.</div>';
+                issuedList.innerHTML = renderNoSearchResults('Keine Person mit diesem Namen gefunden');
                 return;
             }
 
@@ -1194,9 +1255,15 @@
                 return;
             }
 
-            const sorted = [...archive].sort((a, b) =>
-                (b.returnedAt || '').localeCompare(a.returnedAt || '')
-            );
+            const sorted = [...archive]
+                .filter(entry => matchesNameSearch(entry.holder))
+                .sort((a, b) => (b.returnedAt || '').localeCompare(a.returnedAt || ''));
+
+            if (sorted.length === 0 && normalizeSearch(issuedSearchQuery)) {
+                archiveList.innerHTML = renderNoSearchResults('Keine Archiv-Einträge für diesen Namen gefunden');
+                archiveList.style.display = 'flex';
+                return;
+            }
 
             archiveList.innerHTML = sorted.map(entry => {
                 const qty = parseInt(entry.quantity, 10) || 1;
@@ -1468,6 +1535,14 @@
                 if (!tab) return;
                 issuedViewMode = tab.dataset.issuedView;
                 renderIssuedList();
+            });
+        }
+
+        if (issuedSearchInput) {
+            issuedSearchInput.addEventListener('input', () => {
+                issuedSearchQuery = issuedSearchInput.value;
+                renderIssuedList();
+                if (archiveOpen) renderArchive();
             });
         }
 
