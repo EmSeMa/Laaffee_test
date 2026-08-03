@@ -817,23 +817,24 @@
             return (key.markLabel || '').trim();
         }
 
-        function renderKennzeichnungHtml(key) {
+        function buildKennzeichnungParts(key, showNumber) {
+            const parts = [];
             const markNum = getMarkNumber(key);
             const markLbl = getMarkLabel(key);
-            if (!markNum && !markLbl) return '';
-            const parts = [];
-            if (markNum) parts.push(`Nr. ${escapeHtml(markNum)}`);
+            if (showNumber && markNum) parts.push(`Nr. ${escapeHtml(markNum)}`);
             if (markLbl) parts.push(escapeHtml(markLbl));
+            return parts;
+        }
+
+        function renderKennzeichnungHtml(key, showNumber = false) {
+            const parts = buildKennzeichnungParts(key, showNumber);
+            if (parts.length === 0) return '';
             return `<div class="key-card-mark">${parts.join(' · ')}</div>`;
         }
 
         function renderKennzeichnungLine(key) {
-            const markNum = getMarkNumber(key);
-            const markLbl = getMarkLabel(key);
-            if (!markNum && !markLbl) return '';
-            const parts = [];
-            if (markNum) parts.push(`Nr. ${escapeHtml(markNum)}`);
-            if (markLbl) parts.push(escapeHtml(markLbl));
+            const parts = buildKennzeichnungParts(key, true);
+            if (parts.length === 0) return '';
             return `<p class="key-kennzeichnung">${parts.join(' · ')}</p>`;
         }
 
