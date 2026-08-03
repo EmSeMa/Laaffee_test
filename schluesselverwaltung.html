@@ -254,8 +254,20 @@
         }
 
         .key-card-location {
-            color: #666;
+            color: #333;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .key-location-line {
             font-size: 0.88rem;
+            color: #555;
+            margin: 0.15rem 0;
+        }
+
+        .key-location-line .key-location {
+            font-weight: 700;
+            color: #000;
         }
 
         .key-card-quantity {
@@ -536,6 +548,15 @@
             border-radius: 8px;
             padding: 1rem 1.15rem;
             background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .archive-item-content {
+            flex: 1;
+            min-width: 0;
         }
 
         .archive-item h4 {
@@ -559,6 +580,30 @@
             background: #e8f5e9;
             padding: 0.2rem 0.6rem;
             border-radius: 999px;
+        }
+
+        .archive-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            flex-shrink: 0;
+        }
+
+        .archive-clear-btn {
+            margin-top: 0.75rem;
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+            padding: 0.55rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        .archive-clear-btn:hover {
+            background: #ffcdd2;
         }
 
         @media (max-width: 700px) {
@@ -658,7 +703,7 @@
                     <input type="text" id="keyMarkLabel" placeholder="z. B. Hauptschlüssel Anlage, Nebeneingang">
                 </div>
                 <div class="form-field">
-                    <label for="keyLocation">Standort / Schließanlage</label>
+                    <label for="keyLocation">Standortbezeichnung</label>
                     <input type="text" id="keyLocation" placeholder="z. B. Haupteingang, Schlüsselbrett">
                 </div>
                 <div class="form-field">
@@ -792,6 +837,11 @@
             return `<p class="key-kennzeichnung">${parts.join(' · ')}</p>`;
         }
 
+        function renderLocationLine(location) {
+            if (!location) return '';
+            return `<p class="key-location-line">📍 <span class="key-location">${escapeHtml(location)}</span></p>`;
+        }
+
         function formatKeyHeadline(key) {
             const label = key.label || 'Unbenannt';
             const markNum = getMarkNumber(key);
@@ -908,7 +958,9 @@
             const saved = localStorage.getItem(ARCHIVE_STORAGE_KEY);
             if (saved) {
                 try {
-                    archive = JSON.parse(saved) || [];
+                    archive = (JSON.parse(saved) || []).map(entry => (
+                        entry && entry.id != null ? entry : { ...entry, id: Date.now() + Math.random() }
+                    ));
                 } catch (e) {
                     archive = [];
                 }
@@ -1029,7 +1081,7 @@
                     <div class="issued-group">
                         <div class="issued-group-header">
                             ${renderKeyHeaderHtml(key)}
-                            ${key.location ? `<p>📍 ${escapeHtml(key.location)}</p>` : ''}
+                            ${renderLocationLine(key.location)}
                             <span class="issued-group-summary">${issuedLabel} · ${quantitySummary(key)}</span>
                         </div>
                         ${rows}
@@ -1079,7 +1131,7 @@
                             <div class="issued-item">
                                 <div class="issued-item-info">
                                     ${renderKeyHeaderHtml(key)}
-                                    ${key.location ? `<p>📍 ${escapeHtml(key.location)}</p>` : ''}
+                                    ${renderLocationLine(key.location)}
                                     <p>📦 ${qtyLabel}</p>
                                     ${issuance.issuedAt ? `<p>📅 Ausgegeben am ${formatDate(issuance.issuedAt)}</p>` : ''}
                                     ${issuance.issueNotes ? `<p>📝 ${escapeHtml(issuance.issueNotes)}</p>` : ''}
@@ -1158,19 +1210,49 @@
             archiveList.innerHTML = sorted.map(entry => {
                 const qty = parseInt(entry.quantity, 10) || 1;
                 const qtyLabel = qty === 1 ? '1 Stück' : `${qty} Stück`;
+                const entryId = entry.id != null ? entry.id : '';
                 return `
                     <div class="archive-item">
-                        ${renderKeyHeaderHtml({ label: entry.keyLabel, markNumber: entry.keyMarkNumber, markLabel: entry.keyMarkLabel })}
-                        ${entry.keyLocation ? `<p>📍 ${escapeHtml(entry.keyLocation)}</p>` : ''}
-                        <p>👤 ${escapeHtml(entry.holder) || 'Unbekannt'} · 📦 ${qtyLabel}</p>
-                        ${entry.issuedAt ? `<p>📅 Ausgegeben: ${formatDate(entry.issuedAt)}</p>` : ''}
-                        ${entry.returnedAt ? `<p>✅ Zurückgegeben: ${formatDate(entry.returnedAt)}</p>` : ''}
-                        ${entry.issueNotes ? `<p>📝 ${escapeHtml(entry.issueNotes)}</p>` : ''}
-                        <span class="archive-badge">Rückgabe bestätigt</span>
+                        <div class="archive-item-content">
+                            ${renderKeyHeaderHtml({ label: entry.keyLabel, markNumber: entry.keyMarkNumber, markLabel: entry.keyMarkLabel })}
+                            ${renderLocationLine(entry.keyLocation)}
+                            <p>👤 ${escapeHtml(entry.holder) || 'Unbekannt'} · 📦 ${qtyLabel}</p>
+                            ${entry.issuedAt ? `<p>📅 Ausgegeben: ${formatDate(entry.issuedAt)}</p>` : ''}
+                            ${entry.returnedAt ? `<p>✅ Zurückgegeben: ${formatDate(entry.returnedAt)}</p>` : ''}
+                            ${entry.issueNotes ? `<p>📝 ${escapeHtml(entry.issueNotes)}</p>` : ''}
+                            <span class="archive-badge">Rückgabe bestätigt</span>
+                        </div>
+                        <div class="archive-actions">
+                            <button type="button" class="card-btn delete" data-delete-archive="${entryId}">Löschen</button>
+                        </div>
                     </div>
                 `;
-            }).join('');
+            }).join('') + (sorted.length > 0
+                ? '<button type="button" class="archive-clear-btn" id="clearArchiveBtn">Archiv komplett leeren</button>'
+                : '');
             archiveList.style.display = 'flex';
+        }
+
+        function deleteArchiveEntry(id) {
+            const entry = archive.find(e => String(e.id) === String(id));
+            if (!entry) return;
+
+            const label = entry.keyLabel || 'Schlüssel';
+            const holder = entry.holder || 'Unbekannt';
+            if (!confirm(`Archiv-Eintrag „${label}" (${holder}) wirklich löschen?`)) return;
+
+            archive = archive.filter(e => String(e.id) !== String(id));
+            saveArchive();
+            renderArchive();
+        }
+
+        function clearArchive() {
+            if (archive.length === 0) return;
+            if (!confirm(`Das gesamte Archiv mit ${archive.length} Eintrag${archive.length === 1 ? '' : 'en'} wirklich löschen?`)) return;
+
+            archive = [];
+            saveArchive();
+            renderArchive();
         }
 
         function addToArchive(key, issuance) {
@@ -1405,6 +1487,19 @@
             });
         }
 
+        if (archiveList) {
+            archiveList.addEventListener('click', (e) => {
+                const deleteArchiveBtn = e.target.closest('[data-delete-archive]');
+                if (deleteArchiveBtn) {
+                    deleteArchiveEntry(deleteArchiveBtn.dataset.deleteArchive);
+                    return;
+                }
+                if (e.target.id === 'clearArchiveBtn' || e.target.closest('#clearArchiveBtn')) {
+                    clearArchive();
+                }
+            });
+        }
+
         document.getElementById('addKeyBtn').addEventListener('click', () => openKeyDialog(null));
         document.getElementById('exportExcelBtn').addEventListener('click', exportExcel);
         document.getElementById('cancelKeyDialogBtn').addEventListener('click', closeKeyDialog);
@@ -1554,7 +1649,9 @@
                 renderAll();
             });
             window.SFL.subscribe(ARCHIVE_STORAGE_KEY, (data) => {
-                archive = Array.isArray(data) ? data : [];
+                archive = Array.isArray(data)
+                    ? data.map(entry => (entry && entry.id != null ? entry : { ...entry, id: Date.now() + Math.random() }))
+                    : [];
                 renderArchive();
             });
         }
