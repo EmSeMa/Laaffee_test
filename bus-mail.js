@@ -1,6 +1,6 @@
 // Bus-Buchung: Admin per mailto: informieren (kostenlos, kein Abo nötig)
 (function () {
-    const DEFAULT_ADMIN_EMAIL = 'jugendleitung@sportfreunde-lauffen.de';
+    const DEFAULT_ADMIN_EMAIL = 'vorstand@sportfreunde-lauffen.de';
 
     const DEFAULT_CONFIG = {
         enabled: true,
@@ -155,7 +155,7 @@
 
         lines.push(
             '',
-            'Bei Rückfragen wende dich bitte an die Jugendleitung.',
+            'Bei Rückfragen wende dich bitte an den Vorstand oder Emanuel Massa.',
             '',
             'Sportfreunde Lauffen',
             getBookingLink()
