@@ -316,15 +316,18 @@
 
         .contact-details p {
             margin: 0;
-            word-break: break-word;
-            overflow-wrap: anywhere;
         }
 
         .contact-details a {
             color: #000000;
             text-decoration: none;
-            word-break: break-word;
-            overflow-wrap: anywhere;
+            display: inline-block;
+            max-width: 100%;
+            line-height: 1.5;
+        }
+
+        .contact-details .email-domain {
+            display: block;
         }
 
         .contact-details a:hover {
@@ -899,6 +902,19 @@
     <script src="mobile-nav.js"></script>
     <script src="pwa-register.js"></script>
     <script>
+        // E-Mail-Adressen nach dem @ umbrechen
+        document.querySelectorAll('.contact-details a[href^="mailto:"]').forEach(function (link) {
+            if (link.querySelector('.email-domain')) return;
+            const text = link.textContent.trim();
+            const at = text.indexOf('@');
+            if (at === -1) return;
+            const local = text.slice(0, at + 1);
+            const domain = text.slice(at + 1);
+            link.innerHTML =
+                '<span class="email-local">' + local + '</span>' +
+                '<span class="email-domain">' + domain + '</span>';
+        });
+
         // Smooth Scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
