@@ -238,6 +238,8 @@
             text-align: center;
             box-shadow: 0 4px 14px rgba(0,0,0,0.05);
             transition: transform 0.3s, box-shadow 0.3s;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .contact-card:hover {
@@ -308,11 +310,21 @@
             color: #555;
             font-size: 0.9rem;
             line-height: 1.7;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .contact-details p {
+            margin: 0;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
 
         .contact-details a {
             color: #000000;
             text-decoration: none;
+            word-break: break-word;
+            overflow-wrap: anywhere;
         }
 
         .contact-details a:hover {
