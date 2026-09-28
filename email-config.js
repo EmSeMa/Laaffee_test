@@ -4,7 +4,7 @@ window.SFL_EMAIL_CONFIG = {
     enabled: true,
 
     // Fallback, falls keine Admin-E-Mails in der Benutzerverwaltung hinterlegt sind
-    adminEmails: ['jugendleitung@sportfreunde-lauffen.de'],
+    adminEmails: ['emanuel.massa@sportfreunde-lauffen.de'],
 
     // Basis-URL der App (Ordner, ohne bus-booking.html)
     appBaseUrl: 'https://emsema.github.io/Laaffee_test'
