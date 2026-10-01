@@ -50,6 +50,20 @@
         }
     }
 
+    function uniqueEmails(emails) {
+        const seen = new Set();
+        const unique = [];
+        emails.forEach((email) => {
+            const trimmed = String(email || '').trim();
+            if (!trimmed) return;
+            const key = trimmed.toLowerCase();
+            if (seen.has(key)) return;
+            seen.add(key);
+            unique.push(trimmed);
+        });
+        return unique;
+    }
+
     function getAdminRecipients() {
         const cfg = getConfig();
         const fromUsers = [];
@@ -68,13 +82,12 @@
             }
         } catch (e) { /* ignorieren */ }
 
-        const fallback = Array.isArray(cfg.adminEmails) ? cfg.adminEmails : [DEFAULT_ADMIN_EMAIL];
-        const combined = [...fromUsers, ...fallback]
-            .map((email) => String(email || '').trim())
-            .filter(Boolean);
+        const fromAdmins = uniqueEmails(fromUsers);
+        if (fromAdmins.length) return fromAdmins;
 
-        const unique = [...new Set(combined)];
-        return unique.length ? unique : [DEFAULT_ADMIN_EMAIL];
+        const fallback = Array.isArray(cfg.adminEmails) ? cfg.adminEmails : [DEFAULT_ADMIN_EMAIL];
+        const uniqueFallback = uniqueEmails(fallback);
+        return uniqueFallback.length ? uniqueFallback : [DEFAULT_ADMIN_EMAIL];
     }
 
     function formatBookingDateRange(booking) {
@@ -190,7 +203,8 @@
         mailto += `?subject=${encodeURIComponent(subject)}`;
         mailto += `&body=${encodeURIComponent(body)}`;
 
-        if (userEmail) {
+        const alreadyTo = admins.some((email) => email.toLowerCase() === userEmail.toLowerCase());
+        if (userEmail && !alreadyTo) {
             mailto += `&cc=${encodeURIComponent(userEmail)}`;
         }
 
@@ -205,10 +219,6 @@
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
-        try {
-            window.open(mailto, '_self');
-        } catch (e) { /* ignorieren */ }
     }
 
     function openAdminMailto(booking) {
